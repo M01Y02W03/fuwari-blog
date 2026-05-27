@@ -1,6 +1,6 @@
 {
-  "commitMessage": "vault backup: {{date}}",
-  "autoCommitMessage": "vault backup: {{date}}",
+  "commitMessage": "obsidian自动提交：主机-{{hostname}} 日期-{{date}}",
+  "autoCommitMessage": "obsidian自动提交：主机-{{hostname}} 日期-{{date}}",
   "commitMessageScript": "",
   "commitDateFormat": "YYYY-MM-DD HH:mm:ss",
   "autoSaveInterval": 1,
