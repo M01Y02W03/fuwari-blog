@@ -16,5 +16,3 @@ pnpm dev
 当前效果图仅 2026-05-27 进行初步修改（后续会逐步优化、完善）
 
 ![image.png|](https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian-images/20260527232148338.png)
-
-![](https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian-images/20260527234200722.png)
