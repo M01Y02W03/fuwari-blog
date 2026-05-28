@@ -10,7 +10,7 @@ pnpm install
 pnpm dev
 
 # 新建文章
-pnpm new-post <filename> 或直接在src/content/posts/目录中创建文件
+pnpm new-post <filename> 或直接在src/content/posts/目录中创建文件(需要配置笔记基本属性)
 ```
 
 
@@ -18,7 +18,7 @@ pnpm new-post <filename> 或直接在src/content/posts/目录中创建文件
 
 当前效果图仅 2026-05-27 进行初步修改（后续会逐步优化、完善）
 
-![image.png|](https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian-images/20260527232148338.png)
+![](https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian-images/20260527232148338.png)
 
 
 
