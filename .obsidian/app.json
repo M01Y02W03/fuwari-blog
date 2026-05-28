@@ -3,5 +3,6 @@
   "newLinkFormat": "relative",
   "showUnsupportedFiles": true,
   "uriCallbacks": true,
-  "useMarkdownLinks": true
+  "useMarkdownLinks": true,
+  "promptDelete": false
 }
