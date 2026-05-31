@@ -1,0 +1,285 @@
+---
+const rootId = "banner-poem";
+const contentId = "banner-poem-content";
+const metaId = "banner-poem-meta";
+---
+
+<div
+        id={rootId}
+        class="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-3 py-4 sm:px-6 banner-poem-visible"
+        style="background: radial-gradient(ellipse at center, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 50%, transparent 80%);"
+        aria-live="polite"
+>
+    <div class="relative flex flex-col items-center gap-2.5 text-center">
+        <!-- 诗词内容区域：显著增大字体，调整行高，优化阴影效果 -->
+        <div
+                id={contentId}
+                class="banner-poem-content text-[1.8rem] sm:text-[2.3rem] leading-[1.6] text-[rgba(255,248,236,0.98)]"
+        >
+            <div class="banner-poem-line">正在寻句</div>
+        </div>
+
+        <!-- 诗词出处区域：调整间距和透明度以形成视觉层次 -->
+        <div id={metaId} class="banner-poem-meta-wrap flex flex-col items-center gap-1 text-xs sm:text-sm text-[rgba(218,165,32,0.9)]"></div>
+    </div>
+</div>
+
+<script>
+    const rootId = "banner-poem";
+    const contentId = "banner-poem-content";
+    const metaId = "banner-poem-meta";
+
+    const POEM_API = "https://v1.jinrishici.com/all.json";
+
+    // 滚动控制状态
+    let lastScrollY = 0;
+    let ticking = false;
+
+    function getEl(id) {
+        return document.getElementById(id);
+    }
+
+    // 针对 V1 接口的扁平数据结构进行解析：直接读取 data.author 和 data.origin
+    function formatMeta(data) {
+        const parts = [];
+
+        if (data?.author) {
+            parts.push(data.author);
+        }
+        if (data?.origin) {
+            parts.push(`《${data.origin}》`);
+        }
+
+        return parts.length > 0 ? parts.join(" · ") : "";
+    }
+
+    function splitPoemLines(content) {
+        const text = String(content || "").trim();
+        if (!text) return ["正在寻句"];
+
+        // 按中文或英文标点拆分为独立短句，过滤掉空字符串
+        const segments = text.split(/[，。；！？,;!?]/).map(s => s.trim()).filter(Boolean);
+        return segments.length > 0 ? segments : [text];
+    }
+
+    // 带动画的诗词渲染
+    function renderPoemLinesWithAnimation(lines) {
+        const contentEl = getEl(contentId);
+        if (!contentEl) return;
+
+        contentEl.replaceChildren();
+        lines.forEach((line, i) => {
+            const lineEl = document.createElement("div");
+            lineEl.className = "banner-poem-line banner-poem-line-animate";
+            lineEl.textContent = line;
+            // 竖排 rl 模式下，从右向左排布，所以使用 margin-left 控制列间距
+            if (i < lines.length - 1) {
+                lineEl.style.marginLeft = "0.6em";
+            }
+            // 设置动画延迟，实现逐行显示效果
+            lineEl.style.animationDelay = `${i * 0.15}s`;
+            contentEl.appendChild(lineEl);
+        });
+    }
+
+    function renderFallback(message, metaText, animate = false) {
+        const metaEl = getEl(metaId);
+
+        if (animate) {
+            renderPoemLinesWithAnimation(splitPoemLines(message));
+            // 出处也添加渐显动画
+            if (metaEl) {
+                metaEl.textContent = metaText;
+                metaEl.classList.add("banner-poem-meta-animate");
+            }
+        } else {
+            renderPoemLinesWithAnimation(splitPoemLines(message));
+            if (metaEl) metaEl.textContent = metaText;
+        }
+    }
+
+    // 滚动控制：下滑收起，上滑展开
+    function handleScroll() {
+        const rootEl = getEl(rootId);
+        if (!rootEl) return;
+
+        const currentScrollY = window.scrollY;
+        const isScrollingDown = currentScrollY > lastScrollY;
+        const scrollDelta = Math.abs(currentScrollY - lastScrollY);
+
+        // 只有当滚动距离超过阈值时才触发
+        if (scrollDelta > 5) {
+            if (isScrollingDown && currentScrollY > 100) {
+                // 下滑且超过一定距离，收起诗词
+                rootEl.classList.remove("banner-poem-visible");
+                rootEl.classList.add("banner-poem-hidden");
+            } else if (!isScrollingDown) {
+                // 上滑，展开诗词
+                rootEl.classList.remove("banner-poem-hidden");
+                rootEl.classList.add("banner-poem-visible");
+            }
+            lastScrollY = currentScrollY;
+        }
+
+        ticking = false;
+    }
+
+    function onScroll() {
+        if (!ticking) {
+            window.requestAnimationFrame(handleScroll);
+            ticking = true;
+        }
+    }
+
+    function loadPoem() {
+        const pageKey = window.location.href;
+        renderFallback("正在寻句", "");
+
+        fetch(POEM_API)
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then((data) => {
+                if (window.location.href !== pageKey) return;
+
+                const contentText = data.content || "暂无诗句";
+                const metaText = formatMeta(data);
+
+                // 带渐显动画渲染诗词
+                renderFallback(contentText, metaText, true);
+            })
+            .catch((err) => {
+                if (window.location.href !== pageKey) return;
+                console.error("今日诗词加载失败：", err);
+                renderFallback("古风清句暂未可得", "请稍后重试", false);
+            });
+    }
+
+    window.__loadBannerPoem = loadPoem;
+
+    // 初始化滚动监听
+    window.addEventListener("scroll", onScroll, { passive: true });
+    loadPoem();
+</script>
+
+<style>
+/* 诗词内容艺术效果与古风字体 */
+.banner-poem-content {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    /* 调整字体族优先级：优先使用行楷，其次楷体，最后普通宋体/衬线体 */
+    font-family:
+    "STXingkai",       /* 华文行楷 - Mac/Windows 较大概率有 */
+    "FZXingKai-S04",  /* 方正行楷 - 优秀的中文字体 fallback */
+    "Xingkai SC",     /* 行楷 SC - 另一款 Mac 行楷fallback */
+    "KaiTi",          /* 楷体 - 通用 fallback */
+    "STKaiti",        /* 华文楷体 - Mac 楷体 */
+    "DFKai-SB",       /* 标楷体 - 部分繁体环境或通用楷体 */
+    serif;            /* 衬线体作为最终兜底 */
+
+    /* 艺术字效果：利用多重文本阴影制造发光和描边感，使文字看起来更厚实有质感*/
+    text-shadow:
+    /* 第一层：深色描边，确保在亮色背景上清晰可见 */
+    0 0 2px rgba(0, 0, 0, 0.9),
+    0 0 4px rgba(0, 0, 0, 0.7),
+    0 0 8px rgba(0, 0, 0, 0.5),
+    /* 第二层：浅色发光，增强美感 */
+    0 0 12px rgba(255, 241, 214, 0.4),
+    /* 第三层：轻微位移阴影，增加立体感 */
+    0 1px 0 rgba(255, 255, 255, 0.4);
+
+    /* 竖排更宽的字间距以增强古风感 */
+    letter-spacing: 0.25em;
+    }
+
+.banner-poem-line {
+    display: block;
+    }
+
+/* 出处区域样式 */
+.banner-poem-meta-wrap {
+    /* 楷体用于元数据，保持统一古风 */
+    font-family:
+    "KaiTi",
+    "STKaiti",
+    "DFKai-SB",
+    serif;
+    letter-spacing: 0.08em;
+    text-shadow:
+    0 0 2px rgba(0, 0, 0, 0.8),
+    0 0 4px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.3);
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+    cursor: pointer;
+    }
+
+.banner-poem-meta-wrap:hover {
+    color: rgba(255, 215, 0, 1);
+    text-shadow:
+    0 0 4px rgba(255, 215, 0, 0.6),
+    0 0 8px rgba(255, 215, 0, 0.4),
+    0 0 12px rgba(255, 215, 0, 0.2);
+    }
+
+/* 滚动控制过渡动画 */
+.banner-poem-visible,
+.banner-poem-hidden {
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+.banner-poem-visible {
+    opacity: 1;
+    transform: translateY(0);
+    }
+
+.banner-poem-hidden {
+    opacity: 0;
+    transform: translateY(-30px);
+    pointer-events: none;
+    }
+
+/* 诗词逐行渐显动画 */
+.banner-poem-line-animate {
+    opacity: 0;
+    animation: poemFadeIn 0.8s ease forwards;
+    }
+
+@keyframes poemFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    }
+
+/* 出处渐显动画 */
+.banner-poem-meta-animate {
+    opacity: 0;
+    animation: metaFadeIn 0.6s ease 0.5s forwards;
+    }
+
+@keyframes metaFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+    }
+
+/* 响应式调整：移动端适当减小字体大小，但依然比之前要大 */
+@media (max-width: 639px) {
+    .banner-poem-content {
+    font-size: 1.4rem; /* 移动端增大后的字体大小 */
+    letter-spacing: 0.2em; /* 适当减小移动端字间距以防溢出 */
+    }
+
+    .banner-poem-line {
+    letter-spacing: 0.15em;
+    }
+    }
+</style>

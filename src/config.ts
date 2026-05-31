@@ -21,7 +21,7 @@ export const siteConfig: SiteConfig = {
 		position: "center", // 等同于 `object-position`，仅支持 `top`、`center`、`bottom`，默认值为 `center`。
 		credit: {
 			enable: true, // 显示横幅图片的署名文字。
-			text: "随拍", // 要显示的署名文字。
+			text: "Bing壁纸", // 要显示的署名文字。
 			url: "", // 可选，原始作品或作者页面的链接。
 		},
 	},
