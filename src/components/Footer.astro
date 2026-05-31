@@ -1,21 +1,42 @@
 ---
-
-import { profileConfig } from "../config";
-import { url } from "../utils/url-utils";
+import {profileConfig} from "../config";
+import {url} from "../utils/url-utils";
 
 const currentYear = new Date().getFullYear();
+
+// 出生日期（2003年11月）
+const birthDate = new Date("2003-11-21");
+const now = new Date();
+
+// 计算年龄
+let age = now.getFullYear() - birthDate.getFullYear();
+
+if (
+    now.getMonth() < birthDate.getMonth() ||
+    (now.getMonth() === birthDate.getMonth() &&
+        now.getDate() < birthDate.getDate())
+) {
+    age--;
+}
+
+// 计算累计呼吸次数（按16次/分钟估算）
+const minutesLived = (now.getTime() - birthDate.getTime()) / 1000 / 60;
+const breaths = Math.floor(minutesLived * 16);
+
+// 转换为亿次
+const breathText = (breaths / 100000000).toFixed(1);
 ---
 
-<!--<div class="border-t border-[var(&#45;&#45;primary)] mx-16 border-dashed py-8 max-w-[var(&#45;&#45;page-width)] flex flex-col items-center justify-center px-6">-->
 <div class="transition border-t border-black/10 dark:border-white/15 my-10 border-dashed mx-32"></div>
-<!--<div class="transition bg-[oklch(92%_0.01_var(&#45;&#45;hue))] dark:bg-black rounded-2xl py-8 mt-4 mb-8 flex flex-col items-center justify-center px-6">-->
+
 <div class="transition border-dashed border-[oklch(85%_0.01_var(--hue))] dark:border-white/15 rounded-2xl mb-12 flex flex-col items-center justify-center px-6">
     <div class="transition text-50 text-sm text-center">
-        &copy; <span id="copyright-year">{currentYear}</span> {profileConfig.name}. All Rights Reserved. /
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('rss.xml')}>RSS</a> /
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('sitemap-index.xml')}>Sitemap</a><br>
-        Powered by
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://astro.build">Astro</a> &
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://github.com/saicaca/fuwari">Fuwari</a>
+        &copy; <span id="copyright-year">{currentYear}</span> 局子粥头
+        <br/>
+        地球Online玩家｜Uptime {age} Years｜累计呼吸 {breathText} 亿次｜
+        <span class="inline-flex items-center">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1"></span>
+            Online
+        </span>
     </div>
 </div>

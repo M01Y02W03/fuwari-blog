@@ -46,6 +46,15 @@ export async function getSortedPostsList(): Promise<PostForList[]> {
 
 	return sortedPostsList;
 }
+
+export async function getPublishedPostCount(): Promise<number> {
+	const allBlogPosts = await getCollection("posts", ({ data }) => {
+		return import.meta.env.PROD ? data.draft !== true : true;
+	});
+
+	return allBlogPosts.length;
+}
+
 export type Tag = {
 	name: string;
 	count: number;

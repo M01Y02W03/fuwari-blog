@@ -48,8 +48,8 @@ export default defineConfig({
 			globalInstance: true,
 		}),
 		icon({
+			iconDir: "src/assets/svg",
 			include: {
-				"preprocess: vitePreprocess(),": ["*"],
 				"fa6-brands": ["*"],
 				"fa6-regular": ["*"],
 				"fa6-solid": ["*"],
