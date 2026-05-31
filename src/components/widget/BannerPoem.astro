@@ -20,7 +20,7 @@ const metaId = "banner-poem-meta";
         </div>
 
         <!-- 诗词出处区域：调整间距和透明度以形成视觉层次 -->
-        <div id={metaId} class="banner-poem-meta-wrap flex flex-col items-center gap-1 text-xs sm:text-sm text-[rgba(218,165,32,0.9)]"></div>
+        <div id={metaId} class="banner-poem-meta-wrap flex flex-col items-center gap-1 text-xs sm:text-sm text-[rgba(100,180,255,0.9)]"></div>
     </div>
 </div>
 
@@ -156,11 +156,23 @@ const metaId = "banner-poem-meta";
             });
     }
 
-    window.__loadBannerPoem = loadPoem;
-
-    // 初始化滚动监听
+    // 1. 初始化滚动监听
     window.addEventListener("scroll", onScroll, { passive: true });
+
+    // 2. 首次加载诗词
     loadPoem();
+
+    // 3. 监听 Swup 页面切换事件，每次导航后重新获取诗词
+    function setupSwupListener() {
+        if (window.swup?.hooks) {
+            window.swup.hooks.on("page:view", loadPoem);
+        } else {
+            document.addEventListener("swup:enable", () => {
+                window.swup.hooks.on("page:view", loadPoem);
+            });
+        }
+    }
+    setupSwupListener();
 </script>
 
 <style>
@@ -206,20 +218,23 @@ const metaId = "banner-poem-meta";
     "DFKai-SB",
     serif;
     letter-spacing: 0.08em;
+    /* 1. 基础阴影：深色描边 + 蓝色发光背景，产生光亮效果 */
     text-shadow:
     0 0 2px rgba(0, 0, 0, 0.8),
     0 0 4px rgba(0, 0, 0, 0.5),
+    0 0 8px rgba(100, 180, 255, 0.35),
+    0 0 16px rgba(100, 180, 255, 0.15),
     0 1px 0 rgba(255, 255, 255, 0.3);
     transition: color 0.3s ease, text-shadow 0.3s ease;
     cursor: pointer;
     }
 
 .banner-poem-meta-wrap:hover {
-    color: rgba(255, 215, 0, 1);
+    color: rgba(150, 200, 255, 1);
     text-shadow:
-    0 0 4px rgba(255, 215, 0, 0.6),
-    0 0 8px rgba(255, 215, 0, 0.4),
-    0 0 12px rgba(255, 215, 0, 0.2);
+    0 0 4px rgba(150, 200, 255, 0.6),
+    0 0 8px rgba(150, 200, 255, 0.4),
+    0 0 12px rgba(150, 200, 255, 0.2);
     }
 
 /* 滚动控制过渡动画 */

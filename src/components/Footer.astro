@@ -19,9 +19,9 @@ if (
     age--;
 }
 
-// 计算累计呼吸次数（按16次/分钟估算）
+// 计算累计呼吸次数（按32次/分钟估算）
 const minutesLived = (now.getTime() - birthDate.getTime()) / 1000 / 60;
-const breaths = Math.floor(minutesLived * 16);
+const breaths = Math.floor(minutesLived * 32);
 
 // 转换为亿次
 const breathText = (breaths / 100000000).toFixed(1);

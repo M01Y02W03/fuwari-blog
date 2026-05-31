@@ -88,12 +88,12 @@ export const profileConfig: ProfileConfig = {
 		{
 			name: "CSDN",
 			icon: "csdn",
-			url: "https://blog.csdn.net/",
+			url: "https://blog.csdn.net/2301_79263977?spm=1000.2115.3001.5343",
 		},
 		{
 			name: "Gitee",
 			icon: "gitee", // 对应 `src/assets/svg/gitee.svg`
-			url: "https://gitee.com/",
+			url: "https://gitee.com/wei_flzxsqc",
 		},
 		{
 			name: "Steam",
