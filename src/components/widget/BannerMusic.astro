@@ -1,0 +1,303 @@
+---
+import { Icon } from "astro-icon/components";
+import musicTracks from "../../data/banner-music.json";
+import qishuiLogoRaw from "../../assets/svg/qishui-logo.svg?raw";
+
+type BannerMusicTrack = {
+	title: string;
+	channel: string;
+	url: string;
+	author: string;
+};
+
+const PAGE_SIZE = 5;
+const tracks = (musicTracks as BannerMusicTrack[]).map((track, index) => ({
+	...track,
+	page: Math.floor(index / PAGE_SIZE) + 1,
+}));
+
+const totalPages = Math.max(1, Math.ceil(tracks.length / PAGE_SIZE));
+const visiblePageNumbers = totalPages <= 3
+	? Array.from({ length: totalPages }, (_, index) => index + 1)
+	: [1, 2, totalPages];
+---
+
+<div class="relative">
+	<button
+		id="banner-music-switch"
+		aria-label="音乐信息"
+		class="btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90"
+		type="button"
+	>
+		<Icon name="material-symbols:music-note-rounded" class="text-[1.25rem]"></Icon>
+	</button>
+
+	<div
+		id="banner-music-panel"
+		class="float-panel float-panel-closed fixed left-2 right-2 top-[4.75rem] z-50 w-auto max-h-[calc(100vh-5.5rem)] overflow-y-auto overscroll-contain px-3 py-3 sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[22rem] sm:max-w-[calc(100vw-2rem)] sm:px-4 sm:py-4"
+		data-total-pages={totalPages}
+	>
+		<div class="flex items-center justify-between gap-3 mb-3">
+			<div
+				class="font-bold text-lg text-neutral-900 dark:text-neutral-100 transition relative ml-3
+				before:w-1 before:h-4 before:rounded-md before:bg-[var(--primary)]
+				before:absolute before:-left-3 before:top-[0.33rem]"
+			>
+				音乐列表
+			</div>
+			<div class="qishui-logo flex items-center justify-end" aria-label="汽水音乐" role="img">
+				<span set:html={qishuiLogoRaw}></span>
+			</div>
+		</div>
+
+		<div class="space-y-1" data-music-tracks>
+			{tracks.map((track) => (
+					<div
+						class="rounded-xl px-1 py-0.5"
+						data-music-track
+						data-music-page={track.page}
+					>
+						<a
+							href={track.url}
+							target="_blank"
+							rel="noopener"
+							class="flex items-center gap-1.5 sm:gap-2 text-xs md:text-[0.85rem] font-semibold leading-5 text-[var(--btn-content)] dark:text-[var(--btn-content)] hover:opacity-80 transition"
+							title={track.title}
+						>
+							<Icon name="material-symbols:play-circle-rounded" class="shrink-0 text-[0.9rem] text-[var(--btn-content)]/80 dark:text-[var(--btn-content)]/80"></Icon>
+							<span class="min-w-0 flex-1 truncate whitespace-nowrap">{track.title}</span>
+							<span class="shrink-0 ml-auto whitespace-nowrap text-right text-[0.7rem] md:text-xs font-medium text-[var(--btn-content)]/80 dark:text-[var(--btn-content)]/80">
+								@{track.author}
+							</span>
+						</a>
+					</div>
+				))}
+			</div>
+
+		<div class="mt-3 pt-3 border-t border-black/5 dark:border-white/5">
+			<div class="flex items-center justify-center gap-2 flex-nowrap whitespace-nowrap overflow-x-auto hide-scrollbar">
+				<button
+					id="banner-music-prev"
+					type="button"
+					class="btn-plain scale-animation rounded-full h-8 px-3 text-sm font-bold active:scale-95 shrink-0"
+				>
+					上一页
+				</button>
+				{totalPages <= 3 ? (
+					visiblePageNumbers.map((pageNumber) => (
+						<button
+							type="button"
+							class:list={[
+								"btn-plain scale-animation rounded-full h-8 min-w-8 px-2.5 text-sm font-bold active:scale-95 shrink-0",
+								{ "bg-[var(--btn-plain-bg-hover)] text-[var(--primary)]": pageNumber === 1 },
+							]}
+							data-music-page-btn={pageNumber}
+						>
+							{pageNumber}
+						</button>
+					))
+				) : (
+					<>
+						<button
+							type="button"
+							class:list={[
+								"btn-plain scale-animation rounded-full h-8 min-w-8 px-2.5 text-sm font-bold active:scale-95 shrink-0",
+								{ "bg-[var(--btn-plain-bg-hover)] text-[var(--primary)]": true },
+							]}
+							data-music-page-slot="first"
+							data-music-page-btn="1"
+						>
+							1
+						</button>
+						<button
+							type="button"
+							class="btn-plain scale-animation rounded-full h-8 min-w-8 px-2.5 text-sm font-bold active:scale-95 shrink-0"
+							data-music-page-slot="second"
+							data-music-page-btn="2"
+						>
+							2
+						</button>
+						<button
+							type="button"
+							class="btn-plain scale-animation rounded-full h-8 min-w-8 px-2.5 text-sm font-bold active:scale-95 shrink-0 text-black/25 dark:text-white/25"
+							data-music-ellipsis
+							aria-label="下一页"
+							title="下一页"
+						>
+							...
+						</button>
+
+						<button
+							type="button"
+							class="btn-plain scale-animation rounded-full h-8 min-w-8 px-2.5 text-sm font-bold active:scale-95 shrink-0"
+							data-music-page-slot="last"
+							data-music-page-btn={totalPages}
+						>
+							{totalPages}
+						</button>
+					</>
+				)}
+				<button
+					id="banner-music-next"
+					type="button"
+					class="btn-plain scale-animation rounded-full h-8 px-3 text-sm font-bold active:scale-95 shrink-0"
+				>
+					下一页
+				</button>
+			</div>
+
+			<div class="mt-2 text-center text-xs font-semibold text-black/45 dark:text-white/45" data-music-page-indicator>
+				1 / {totalPages}
+			</div>
+
+			<div class="mt-3 rounded-lg bg-black/5 dark:bg-white/5 px-3 py-2 text-xs text-black/50 dark:text-white/50 text-center">
+				提示：点击链接后会在新标签页打开汽水音乐播放页。
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	const trackNodes = Array.from(document.querySelectorAll("[data-music-track]"));
+	const pageButtons = Array.from(document.querySelectorAll("[data-music-page-btn]"));
+	const ellipsisBtn = document.querySelector("[data-music-ellipsis]");
+	const indicator = document.querySelector("[data-music-page-indicator]");
+	const prevBtn = document.getElementById("banner-music-prev");
+	const nextBtn = document.getElementById("banner-music-next");
+	const panel = document.getElementById("banner-music-panel");
+	const switchBtn = document.getElementById("banner-music-switch");
+
+	if (panel && switchBtn) {
+		let currentPage = 1;
+		let windowStart = 1;
+		const totalPages = Number(panel.dataset.totalPages ?? "1") || 1;
+		const maxWindowStart = Math.max(1, totalPages - 2);
+
+		const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+		const syncWindowForPage = (pageNumber: number) => {
+			if (totalPages <= 3) {
+				windowStart = 1;
+				return;
+			}
+
+			windowStart = pageNumber <= 2
+				? 1
+				: pageNumber >= totalPages - 1
+					? maxWindowStart
+					: clamp(pageNumber - 1, 1, maxWindowStart);
+		};
+
+		const render = () => {
+			trackNodes.forEach((track) => {
+				const pageNumber = Number(track.getAttribute("data-music-page") ?? "1");
+				track.classList.toggle("hidden", pageNumber !== currentPage);
+			});
+
+			if (totalPages > 3 && pageButtons.length >= 3) {
+				const [firstButton, secondButton, lastButton] = pageButtons;
+
+				firstButton.setAttribute("data-music-page-btn", String(windowStart));
+				firstButton.textContent = String(windowStart);
+				firstButton.classList.toggle("bg-[var(--btn-plain-bg-hover)]", currentPage === windowStart);
+				firstButton.classList.toggle("shadow-sm", currentPage === windowStart);
+				firstButton.classList.toggle("text-[var(--primary)]", currentPage === windowStart);
+
+				secondButton.setAttribute("data-music-page-btn", String(windowStart + 1));
+				secondButton.textContent = String(windowStart + 1);
+				secondButton.classList.toggle("bg-[var(--btn-plain-bg-hover)]", currentPage === windowStart + 1);
+				secondButton.classList.toggle("shadow-sm", currentPage === windowStart + 1);
+				secondButton.classList.toggle("text-[var(--primary)]", currentPage === windowStart + 1);
+
+				lastButton.setAttribute("data-music-page-btn", String(totalPages));
+				lastButton.textContent = String(totalPages);
+				lastButton.classList.toggle("bg-[var(--btn-plain-bg-hover)]", currentPage === totalPages);
+				lastButton.classList.toggle("shadow-sm", currentPage === totalPages);
+				lastButton.classList.toggle("text-[var(--primary)]", currentPage === totalPages);
+			}
+
+			if (indicator) {
+				indicator.textContent = `${currentPage} / ${totalPages}`;
+			}
+
+			pageButtons.forEach((button) => {
+				const pageNumber = Number(button.getAttribute("data-music-page-btn") ?? "1");
+				button.classList.toggle("bg-[var(--btn-plain-bg-hover)]", pageNumber === currentPage);
+				button.classList.toggle("shadow-sm", pageNumber === currentPage);
+				button.classList.toggle("text-[var(--primary)]", pageNumber === currentPage);
+			});
+
+			if (prevBtn) {
+				prevBtn.toggleAttribute("disabled", currentPage <= 1);
+				prevBtn.classList.toggle("opacity-40", currentPage <= 1);
+				prevBtn.classList.toggle("pointer-events-none", currentPage <= 1);
+			}
+
+			if (nextBtn) {
+				nextBtn.toggleAttribute("disabled", currentPage >= totalPages);
+				nextBtn.classList.toggle("opacity-40", currentPage >= totalPages);
+				nextBtn.classList.toggle("pointer-events-none", currentPage >= totalPages);
+			}
+		};
+
+		prevBtn?.addEventListener("click", (event) => {
+			event.stopPropagation();
+			if (currentPage <= 1) return;
+			currentPage -= 1;
+			syncWindowForPage(currentPage);
+			render();
+		});
+
+		nextBtn?.addEventListener("click", (event) => {
+			event.stopPropagation();
+			if (currentPage >= totalPages) return;
+			currentPage += 1;
+			syncWindowForPage(currentPage);
+			render();
+		});
+
+		pageButtons.forEach((button) => {
+			button.addEventListener("click", (event) => {
+				event.stopPropagation();
+				const pageNumber = Number(button.getAttribute("data-music-page-btn") ?? "1");
+				if (!Number.isNaN(pageNumber)) {
+					currentPage = pageNumber;
+					syncWindowForPage(pageNumber);
+					render();
+				}
+			});
+		});
+
+		ellipsisBtn?.addEventListener("click", (event) => {
+			event.stopPropagation();
+			if (totalPages <= 3 || windowStart >= maxWindowStart) return;
+			windowStart = Math.min(windowStart + 1, maxWindowStart);
+			currentPage = windowStart;
+			render();
+		});
+
+		switchBtn.addEventListener("click", (event) => {
+			event.stopPropagation();
+			panel.classList.toggle("float-panel-closed");
+			render();
+		});
+
+		render();
+	}
+</script>
+
+<style>
+	.qishui-logo {
+		color: var(--btn-content);
+	}
+
+	.qishui-logo :global(svg) {
+		display: block;
+		height: 1.25rem;
+		width: auto;
+	}
+
+	.qishui-logo :global(path[fill="white"]) {
+		fill: currentColor;
+	}
+</style>

@@ -23,29 +23,29 @@ define(vars)
         {key}: value[1]
 
 define({
-  --primary: oklch(0.70 0.14 var(--hue)) oklch(0.75 0.14 var(--hue))
-  --page-bg: oklch(0.95 0.01 var(--hue)) oklch(0.16 0.014 var(--hue))
-  --card-bg: white oklch(0.23 0.015 var(--hue))
+  --primary: var(--theme-primary-light, oklch(0.70 0.14 var(--hue))) var(--theme-primary-dark, oklch(0.75 0.14 var(--hue)))
+  --page-bg: var(--theme-page-bg-light, oklch(0.95 0.01 var(--hue))) var(--theme-page-bg-dark, oklch(0.16 0.014 var(--hue)))
+  --card-bg: var(--theme-card-bg-light, white) var(--theme-card-bg-dark, oklch(0.23 0.015 var(--hue)))
 
-  --btn-content: oklch(0.55 0.12 var(--hue)) oklch(0.75 0.1 var(--hue))
+  --btn-content: var(--theme-btn-content-light, oklch(0.55 0.12 var(--hue))) var(--theme-btn-content-dark, oklch(0.75 0.1 var(--hue)))
 
-  --btn-regular-bg: oklch(0.95 0.025 var(--hue)) oklch(0.33 0.035 var(--hue))
-  --btn-regular-bg-hover: oklch(0.9 0.05 var(--hue)) oklch(0.38 0.04 var(--hue))
-  --btn-regular-bg-active: oklch(0.85 0.08 var(--hue)) oklch(0.43 0.045 var(--hue))
+  --btn-regular-bg: var(--theme-btn-regular-bg-light, oklch(0.95 0.025 var(--hue))) var(--theme-btn-regular-bg-dark, oklch(0.33 0.035 var(--hue)))
+  --btn-regular-bg-hover: var(--theme-btn-regular-bg-hover-light, oklch(0.9 0.05 var(--hue))) var(--theme-btn-regular-bg-hover-dark, oklch(0.38 0.04 var(--hue)))
+  --btn-regular-bg-active: var(--theme-btn-regular-bg-active-light, oklch(0.85 0.08 var(--hue))) var(--theme-btn-regular-bg-active-dark, oklch(0.43 0.045 var(--hue)))
 
-  --btn-plain-bg-hover: oklch(0.95 0.025 var(--hue)) oklch(0.30 0.035 var(--hue))
-  --btn-plain-bg-active: oklch(0.98 0.01 var(--hue)) oklch(0.27 0.025 var(--hue))
+  --btn-plain-bg-hover: var(--theme-btn-plain-bg-hover-light, oklch(0.95 0.025 var(--hue))) var(--theme-btn-plain-bg-hover-dark, oklch(0.30 0.035 var(--hue)))
+  --btn-plain-bg-active: var(--theme-btn-plain-bg-active-light, oklch(0.98 0.01 var(--hue))) var(--theme-btn-plain-bg-active-dark, oklch(0.27 0.025 var(--hue)))
 
-  --btn-card-bg-hover: oklch(0.98 0.005 var(--hue)) oklch(0.3 0.03 var(--hue))
-  --btn-card-bg-active: oklch(0.9 0.03 var(--hue)) oklch(0.35 0.035 var(--hue))
+  --btn-card-bg-hover: var(--theme-btn-card-bg-hover-light, oklch(0.98 0.005 var(--hue))) var(--theme-btn-card-bg-hover-dark, oklch(0.3 0.03 var(--hue)))
+  --btn-card-bg-active: var(--theme-btn-card-bg-active-light, oklch(0.9 0.03 var(--hue))) var(--theme-btn-card-bg-active-dark, oklch(0.35 0.035 var(--hue)))
 
   --enter-btn-bg: var(--btn-regular-bg)
   --enter-btn-bg-hover: var(--btn-regular-bg-hover)
   --enter-btn-bg-active: var(--btn-regular-bg-active)
 
-  --deep-text: oklch(0.25 0.02 var(--hue))
+  --deep-text: var(--theme-deep-text-light, oklch(0.25 0.02 var(--hue))) var(--theme-deep-text-dark, oklch(0.75 0.02 var(--hue)))
 
-  --title-active: oklch(0.6 0.1 var(--hue))
+  --title-active: var(--theme-title-active-light, oklch(0.6 0.1 var(--hue))) var(--theme-title-active-dark, oklch(0.75 0.1 var(--hue)))
 
   --line-divider: black(0.08) white(0.08)
 
@@ -54,18 +54,18 @@ define({
 
   --inline-code-bg: var(--btn-regular-bg)
   --inline-code-color: var(--btn-content)
-  --selection-bg: oklch(0.90 0.05 var(--hue)) oklch(0.40 0.08 var(--hue))
-  --codeblock-selection: oklch(0.40 0.08 var(--hue))
-  --codeblock-bg: oklch(0.17 0.015 var(--hue)) oklch(0.17 0.015 var(--hue))
-  --codeblock-topbar-bg: oklch(0.3 0.02 var(--hue)) oklch(0.12 0.015 var(--hue))
+  --selection-bg: var(--theme-selection-bg-light, oklch(0.90 0.05 var(--hue))) var(--theme-selection-bg-dark, oklch(0.40 0.08 var(--hue)))
+  --codeblock-selection: var(--theme-codeblock-selection-light, oklch(0.40 0.08 var(--hue))) var(--theme-codeblock-selection-dark, oklch(0.40 0.08 var(--hue)))
+  --codeblock-bg: var(--theme-codeblock-bg-light, oklch(0.17 0.015 var(--hue))) var(--theme-codeblock-bg-dark, oklch(0.17 0.015 var(--hue)))
+  --codeblock-topbar-bg: var(--theme-codeblock-topbar-bg-light, oklch(0.3 0.02 var(--hue))) var(--theme-codeblock-topbar-bg-dark, oklch(0.12 0.015 var(--hue)))
 
   --license-block-bg: black(0.03) var(--codeblock-bg)
 
-  --link-underline: oklch(0.93 0.04 var(--hue)) oklch(0.40 0.08 var(--hue))
-  --link-hover: oklch(0.95 0.025 var(--hue)) oklch(0.40 0.08 var(--hue))
-  --link-active: oklch(0.90 0.05 var(--hue)) oklch(0.35 0.07 var(--hue))
+  --link-underline: var(--theme-link-underline-light, oklch(0.93 0.04 var(--hue))) var(--theme-link-underline-dark, oklch(0.40 0.08 var(--hue)))
+  --link-hover: var(--theme-link-hover-light, oklch(0.95 0.025 var(--hue))) var(--theme-link-hover-dark, oklch(0.40 0.08 var(--hue)))
+  --link-active: var(--theme-link-active-light, oklch(0.90 0.05 var(--hue))) var(--theme-link-active-dark, oklch(0.35 0.07 var(--hue)))
 
-  --float-panel-bg: white oklch(0.19 0.015 var(--hue))
+  --float-panel-bg: var(--theme-float-panel-bg-light, white) var(--theme-float-panel-bg-dark, oklch(0.19 0.015 var(--hue)))
 
   --scrollbar-bg-light: black(0.4)
   --scrollbar-bg-hover-light: black(0.5)
@@ -79,7 +79,7 @@ define({
   --scrollbar-bg-hover: var(--scrollbar-bg-hover-light) var(--scrollbar-bg-hover-dark)
   --scrollbar-bg-active: var(--scrollbar-bg-active-light) var(--scrollbar-bg-active-dark)
 
-  --color-selection-bar: rainbow-light rainbow-dark
+  --color-selection-bar: var(--theme-color-selection-bar-light, rainbow-light) var(--theme-color-selection-bar-dark, rainbow-dark)
 
   --display-light-icon: 1 0
   --display-dark-icon: 0 1
@@ -90,9 +90,9 @@ define({
   --admonitions-color-warning: oklch(0.7 0.14 60) oklch(0.75 0.14 60)
   --admonitions-color-caution: oklch(0.6 0.2 25) oklch(0.65 0.2 25)
 
-  --toc-badge-bg: oklch(0.89 0.050 var(--hue)) var(--btn-regular-bg)
-  --toc-btn-hover: oklch(0.926 0.015 var(--hue)) oklch(0.22 0.02 var(--hue))
-  --toc-btn-active: oklch(0.90 0.015 var(--hue)) oklch(0.25 0.02 var(--hue))
+  --toc-badge-bg: var(--theme-toc-badge-bg-light, oklch(0.89 0.050 var(--hue))) var(--theme-toc-badge-bg-dark, var(--btn-regular-bg))
+  --toc-btn-hover: var(--theme-toc-btn-hover-light, oklch(0.926 0.015 var(--hue))) var(--theme-toc-btn-hover-dark, oklch(0.22 0.02 var(--hue)))
+  --toc-btn-active: var(--theme-toc-btn-active-light, oklch(0.90 0.015 var(--hue))) var(--theme-toc-btn-active-dark, oklch(0.25 0.02 var(--hue)))
   --toc-width: calc((100vw - var(--page-width)) / 2 - 1rem)
-  --toc-item-active: oklch(0.70 0.13 var(--hue)) oklch(0.35 0.07 var(--hue))
+  --toc-item-active: var(--theme-toc-item-active-light, oklch(0.70 0.13 var(--hue))) var(--theme-toc-item-active-dark, oklch(0.35 0.07 var(--hue)))
 })

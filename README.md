@@ -9,6 +9,16 @@ pnpm install
 # 启动项目
 pnpm dev
 
+# 构建
+npm run build
+
+# 发布
+/opt/app/ai-agent-web目录下上传dist.zip压缩包
+unzip dist.zip
+sudo nginx -s reload
+sudo nginx -t
+sudo systemctl status nginx
+
 # 新建文章
 pnpm new-post <filename> 或直接在src/content/posts/目录中创建文件(需要配置笔记基本属性)
 ```
