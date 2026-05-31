@@ -1,44 +1,37 @@
 [
   {
-    "title": "所谓有求而不得",
+    "title": "《所谓有求而不得》",
     "channel": "@汽水音乐",
-    "url": "https://qishui.douyin.com/s/iQUEs1mC/",
+    "url": "src/data/mp3/cn/所谓有求而不得.mp3",
+    "cover": "https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian-images/%E9%9F%B3%E9%A2%91cover/%E6%89%80%E8%B0%93%E6%9C%89%E6%B1%82%E8%80%8C%E4%B8%8D%E5%BE%97.png",
     "author": "大头针"
   },
   {
-    "title": "城北的花",
+    "title": "《My Heart Will Go On》",
     "channel": "@汽水音乐",
-    "url": "https://qishui.douyin.com/s/iQyP32Bm/",
-    "author": "王宇宙Leto，乔浚丞"
+    "url": "src/data/mp3/en/My Heart Will Go On.mp3",
+    "cover": "https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian-images/%E9%9F%B3%E9%A2%91cover/My%20Heart%20Will%20Go%20On.png",
+    "author": "维他柠檬茶"
   },
   {
-    "title": "吹梦到西洲",
+    "title": "《Rise high from a little fall》",
     "channel": "@汽水音乐",
-    "url": "https://qishui.douyin.com/s/iQyetanm/",
-    "author": "我也不知道啊"
+    "url": "src/data/mp3/en/Rise high from a little fall.mp3",
+    "cover": "https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian-images/%E9%9F%B3%E9%A2%91cover/Rise%20high%20from%20a%20little%20fall.png",
+    "author": "MAJONG ZIKIO"
   },
   {
-    "title": "知我",
+    "title": "《晴天》",
     "channel": "@汽水音乐",
-    "url": "https://qishui.douyin.com/s/iQy5huFF/",
-    "author": "诗云文集"
-  },
-  {
-    "title": "晴天",
-    "channel": "@汽水音乐",
-    "url": "https://qishui.douyin.com/s/iQy5jaJ1/",
+    "url": "src/data/mp3/cn/晴天.mp3",
+    "cover": "https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian-images/%E9%9F%B3%E9%A2%91cover/%E6%99%B4%E5%A4%A9.png",
     "author": "周杰伦"
   },
   {
-    "title": "稻香",
+    "title": "《稻香》",
     "channel": "@汽水音乐",
-    "url": "https://qishui.douyin.com/s/iQy5RR4U/",
+    "url": "src/data/mp3/cn/稻香.mp3",
+    "cover": "https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian-images/%E9%9F%B3%E9%A2%91cover/%E7%A8%BB%E9%A6%99.png",
     "author": "周杰伦"
-  },
-  {
-    "title": "Landslide",
-    "channel": "@汽水音乐",
-    "url": "https://qishui.douyin.com/s/iQy5tu6R/",
-    "author": "Oh Wonder"
   }
 ]
