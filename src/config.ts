@@ -83,7 +83,7 @@ export const profileConfig: ProfileConfig = {
 		{
 			name: "哔哩哔哩",
 			icon: "bilibili",
-			url: "https://space.bilibili.com/",
+			url: "https://b23.tv/JB4Ivp0",
 		},
 		{
 			name: "GitHub",

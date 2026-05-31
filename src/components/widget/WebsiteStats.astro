@@ -3,12 +3,6 @@ import { Icon } from "astro-icon/components";
 import WidgetLayout from "./WidgetLayout.astro";
 import { getPublishedPostCount } from "../../utils/content-utils";
 
-type UmamiWebsiteStats = {
-	pageviews?: number;
-	visitors?: number;
-	visits?: number;
-};
-
 interface Props {
 	class?: string;
 	style?: string;
@@ -28,39 +22,15 @@ const runningDays = Math.max(
 	Math.floor((startOfToday.getTime() - startOfLaunchDay.getTime()) / 86400000) + 1,
 );
 
-const [postCount, umamiStats] = await Promise.all([
-	getPublishedPostCount(),
-	(async () => {
-		try {
-			if (!websiteId || !apiKey) {
-				return null;
-			}
-
-			const response = await fetch(`https://api.umami.is/v1/websites/${websiteId}/stats`, {
-				headers: {
-					"x-umami-api-key": apiKey,
-				},
-			});
-
-			if (!response.ok) {
-				return null;
-			}
-
-			return (await response.json()) as UmamiWebsiteStats;
-		} catch {
-			return null;
-		}
-	})(),
-]);
+const postCount = await getPublishedPostCount();
 
 const numberFormatter = new Intl.NumberFormat("zh-CN");
 const articleCount = numberFormatter.format(postCount);
 const runningDaysText = numberFormatter.format(runningDays);
-const pageviewsText = umamiStats?.pageviews != null ? numberFormatter.format(umamiStats.pageviews) : "--";
-const visitsText = umamiStats?.visits != null ? numberFormatter.format(umamiStats.visits) : "--";
 ---
 
-<WidgetLayout name="网站信息" id="website-stats" class={className} style={style}>
+<WidgetLayout name="网站信息" id="website-stats" class={className} style={style}
+              data-umami-website-id={websiteId} data-umami-api-key={apiKey}>
 	<div class="grid grid-cols-2 gap-3 pb-1">
 		<div class="rounded-xl bg-[var(--btn-regular-bg)] border border-black/5 dark:border-white/5 px-3 py-3 flex flex-col items-center text-center gap-1.5">
 			<div class="flex items-center justify-center gap-1.5 text-black/45 dark:text-white/45 text-xs">
@@ -83,7 +53,7 @@ const visitsText = umamiStats?.visits != null ? numberFormatter.format(umamiStat
 				<Icon name="material-symbols:visibility-outline-rounded" class="text-[1rem]"></Icon>
 				<span>浏览量</span>
 			</div>
-			<div class="w-full text-2xl font-bold leading-none text-black/85 dark:text-white/90 text-center">{pageviewsText}</div>
+			<div class="w-full text-2xl font-bold leading-none text-black/85 dark:text-white/90 text-center" id="umami-pageviews">--</div>
 		</div>
 
 		<div class="rounded-xl bg-[var(--btn-regular-bg)] border border-black/5 dark:border-white/5 px-3 py-3 flex flex-col items-center text-center gap-1.5">
@@ -91,7 +61,37 @@ const visitsText = umamiStats?.visits != null ? numberFormatter.format(umamiStat
 				<Icon name="material-symbols:person-outline-rounded" class="text-[1rem]"></Icon>
 				<span>访问次数</span>
 			</div>
-			<div class="w-full text-2xl font-bold leading-none text-black/85 dark:text-white/90 text-center">{visitsText}</div>
+			<div class="w-full text-2xl font-bold leading-none text-black/85 dark:text-white/90 text-center" id="umami-visits">--</div>
 		</div>
 	</div>
 </WidgetLayout>
+
+<script>
+	const widget = document.getElementById("website-stats");
+	if (widget) {
+		const websiteId = widget.getAttribute("data-umami-website-id");
+		const apiKey = widget.getAttribute("data-umami-api-key");
+
+		if (websiteId && apiKey) {
+			fetch(`https://api.umami.is/v1/websites/${websiteId}/stats`, {
+				headers: { "x-umami-api-key": apiKey },
+			})
+				.then((res) => {
+					if (!res.ok) throw new Error("Umami API error");
+					return res.json();
+				})
+				.then((data) => {
+					const pageviewsEl = document.getElementById("umami-pageviews");
+					const visitsEl = document.getElementById("umami-visits");
+					const fmt = new Intl.NumberFormat("zh-CN");
+					if (pageviewsEl && data?.pageviews?.value != null) {
+						pageviewsEl.textContent = fmt.format(data.pageviews.value);
+					}
+					if (visitsEl && data?.visits?.value != null) {
+						visitsEl.textContent = fmt.format(data.visits.value);
+					}
+				})
+				.catch(() => {});
+		}
+	}
+</script>
