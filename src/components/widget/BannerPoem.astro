@@ -11,16 +11,15 @@ const metaId = "banner-poem-meta";
         aria-live="polite"
 >
     <div class="relative flex flex-col items-center gap-2.5 text-center">
-        <!-- 诗词内容区域：显著增大字体，调整行高，优化阴影效果 -->
+        <!-- 诗词内容区域 -->
         <div
                 id={contentId}
-                class="banner-poem-content text-[1.8rem] sm:text-[2.3rem] leading-[1.6] text-[rgba(255,248,236,0.98)]"
+                class="banner-poem-content banner-poem-fade-hidden text-[1.8rem] sm:text-[2.3rem] leading-[1.6] text-[rgba(255,248,236,0.98)]"
         >
-            <div class="banner-poem-line">正在寻句</div>
         </div>
 
-        <!-- 诗词出处区域：调整间距和透明度以形成视觉层次 -->
-        <div id={metaId} class="banner-poem-meta-wrap flex flex-col items-center gap-1 text-xs sm:text-sm text-[rgba(100,180,255,0.9)]"></div>
+        <!-- 诗词出处区域 -->
+        <div id={metaId} class="banner-poem-meta-wrap banner-poem-fade-hidden flex flex-col items-center gap-1 text-xs sm:text-sm text-[rgba(100,180,255,0.9)]"></div>
     </div>
 </div>
 
@@ -55,7 +54,7 @@ const metaId = "banner-poem-meta";
 
     function splitPoemLines(content) {
         const text = String(content || "").trim();
-        if (!text) return ["正在寻句"];
+        if (!text) return [];
 
         // 按中文或英文标点拆分为独立短句，过滤掉空字符串
         const segments = text.split(/[，。；！？,;!?]/).map(s => s.trim()).filter(Boolean);
@@ -63,38 +62,61 @@ const metaId = "banner-poem-meta";
     }
 
     // 带动画的诗词渲染
-    function renderPoemLinesWithAnimation(lines) {
+    function renderPoemLinesWithAnimation(lines, animate = false) {
         const contentEl = getEl(contentId);
         if (!contentEl) return;
 
         contentEl.replaceChildren();
-        lines.forEach((line, i) => {
-            const lineEl = document.createElement("div");
-            lineEl.className = "banner-poem-line banner-poem-line-animate";
-            lineEl.textContent = line;
-            // 竖排 rl 模式下，从右向左排布，所以使用 margin-left 控制列间距
-            if (i < lines.length - 1) {
-                lineEl.style.marginLeft = "0.6em";
+
+        // 1. 移动端使用包裹容器，让多行诗句共享宽度，实现整体居中
+        const isMobile = window.innerWidth <= 639;
+        let container = contentEl;
+        if (isMobile) {
+            const wrap = document.createElement("div");
+            wrap.className = "banner-poem-lines-wrap";
+            if (animate) {
+                wrap.classList.add("banner-poem-fade-hidden");
             }
-            // 设置动画延迟，实现逐行显示效果
-            lineEl.style.animationDelay = `${i * 0.15}s`;
-            contentEl.appendChild(lineEl);
+            contentEl.appendChild(wrap);
+            container = wrap;
+        }
+
+        lines.forEach((line) => {
+            const lineEl = document.createElement("div");
+            lineEl.className = "banner-poem-line";
+            lineEl.textContent = line;
+            container.appendChild(lineEl);
         });
+
+        if (!animate) {
+            contentEl.classList.remove("banner-poem-fade-hidden");
+        } else {
+            contentEl.classList.add("banner-poem-fade-hidden");
+            // 强制回流以确保初始隐藏状态生效
+            contentEl.offsetHeight;
+            contentEl.classList.remove("banner-poem-fade-hidden");
+            const target = isMobile ? contentEl.querySelector(".banner-poem-lines-wrap") : contentEl;
+            if (target) {
+                target.classList.remove("banner-poem-fade-hidden");
+                target.classList.add("banner-poem-content-animate");
+            }
+        }
     }
 
     function renderFallback(message, metaText, animate = false) {
         const metaEl = getEl(metaId);
 
-        if (animate) {
-            renderPoemLinesWithAnimation(splitPoemLines(message));
-            // 出处也添加渐显动画
-            if (metaEl) {
+        renderPoemLinesWithAnimation(splitPoemLines(message), animate);
+
+        if (metaEl) {
+            if (animate) {
                 metaEl.textContent = metaText;
+                metaEl.classList.remove("banner-poem-fade-hidden");
                 metaEl.classList.add("banner-poem-meta-animate");
+            } else {
+                metaEl.textContent = metaText;
+                metaEl.classList.remove("banner-poem-fade-hidden");
             }
-        } else {
-            renderPoemLinesWithAnimation(splitPoemLines(message));
-            if (metaEl) metaEl.textContent = metaText;
         }
     }
 
@@ -133,7 +155,11 @@ const metaId = "banner-poem-meta";
 
     function loadPoem() {
         const pageKey = window.location.href;
-        renderFallback("正在寻句", "");
+        // 初始清空内容区域，不显示"正在寻句"
+        const contentEl = getEl(contentId);
+        const metaEl = getEl(metaId);
+        if (contentEl) contentEl.replaceChildren();
+        if (metaEl) metaEl.textContent = "";
 
         fetch(POEM_API)
             .then((res) => {
@@ -173,6 +199,16 @@ const metaId = "banner-poem-meta";
         }
     }
     setupSwupListener();
+
+    // 4. 点击"每日一句"刷新诗句
+    document.getElementById("banner-credit")?.addEventListener("click", (e) => {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        loadPoem();
+    });
+
+    // 5. 每 5 分钟自动刷新诗句
+    setInterval(loadPoem, 5 * 60 * 1000);
 </script>
 
 <style>
@@ -209,8 +245,14 @@ const metaId = "banner-poem-meta";
     display: block;
     }
 
+/* 1. 桌面竖排模式下，非最后一行添加列间距 */
+.banner-poem-line:not(:last-child) {
+    margin-left: 0.6em;
+    }
+
 /* 出处区域样式 */
 .banner-poem-meta-wrap {
+    font-size: 1.0rem;
     /* 楷体用于元数据，保持统一古风 */
     font-family:
     "KaiTi",
@@ -218,23 +260,24 @@ const metaId = "banner-poem-meta";
     "DFKai-SB",
     serif;
     letter-spacing: 0.08em;
-    /* 1. 基础阴影：深色描边 + 蓝色发光背景，产生光亮效果 */
+    /* 1. 灰白色字体 + 金色描边 */
+    color: rgba(220, 220, 220, 0.95);
     text-shadow:
-    0 0 2px rgba(0, 0, 0, 0.8),
-    0 0 4px rgba(0, 0, 0, 0.5),
-    0 0 8px rgba(100, 180, 255, 0.35),
-    0 0 16px rgba(100, 180, 255, 0.15),
-    0 1px 0 rgba(255, 255, 255, 0.3);
+    0 0 2px rgba(0, 0, 0, 0.9),
+    0 0 3px rgba(218, 165, 32, 0.9),
+    0 0 6px rgba(218, 165, 32, 0.6),
+    0 0 10px rgba(218, 165, 32, 0.3);
     transition: color 0.3s ease, text-shadow 0.3s ease;
     cursor: pointer;
     }
 
 .banner-poem-meta-wrap:hover {
-    color: rgba(150, 200, 255, 1);
+    color: rgba(255, 255, 255, 1);
     text-shadow:
-    0 0 4px rgba(150, 200, 255, 0.6),
-    0 0 8px rgba(150, 200, 255, 0.4),
-    0 0 12px rgba(150, 200, 255, 0.2);
+    0 0 2px rgba(0, 0, 0, 0.9),
+    0 0 4px rgba(218, 165, 32, 1),
+    0 0 8px rgba(218, 165, 32, 0.8),
+    0 0 14px rgba(218, 165, 32, 0.5);
     }
 
 /* 滚动控制过渡动画 */
@@ -254,27 +297,28 @@ const metaId = "banner-poem-meta";
     pointer-events: none;
     }
 
-/* 诗词逐行渐显动画 */
-.banner-poem-line-animate {
+/* 初始隐藏状态 */
+.banner-poem-fade-hidden {
     opacity: 0;
-    animation: poemFadeIn 0.8s ease forwards;
     }
 
-@keyframes poemFadeIn {
+/* 诗词内容渐显动画 */
+.banner-poem-content-animate {
+    animation: contentFadeIn 1s ease forwards;
+    }
+
+@keyframes contentFadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
     }
     }
 
 /* 出处渐显动画 */
 .banner-poem-meta-animate {
-    opacity: 0;
-    animation: metaFadeIn 0.6s ease 0.5s forwards;
+    animation: metaFadeIn 1s ease forwards;
     }
 
 @keyframes metaFadeIn {
@@ -286,15 +330,49 @@ const metaId = "banner-poem-meta";
     }
     }
 
-/* 响应式调整：移动端适当减小字体大小，但依然比之前要大 */
+/* 响应式调整：移动端改为横排布局，适配窄屏 */
 @media (max-width: 639px) {
+    #banner-poem {
+    /* 1. 增加顶部 padding 避开导航栏遮挡 */
+    padding-top: 18rem;
+    }
+
     .banner-poem-content {
-    font-size: 1.4rem; /* 移动端增大后的字体大小 */
-    letter-spacing: 0.2em; /* 适当减小移动端字间距以防溢出 */
+    font-size: 1.2rem;
+    letter-spacing: 0.1em;
+    /* 2. 移动端切换为横排 */
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+    /* 3. 清空桌面竖排样式 */
+    display: block;
+    text-align: center;
+    /* 4. 允许换行并限制最大宽度 */
+    max-width: 90vw;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    }
+
+    .banner-poem-lines-wrap {
+    /* 5. 包裹容器：flex 列 + inline-flex 自适应宽度 */
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
     }
 
     .banner-poem-line {
-    letter-spacing: 0.15em;
+    letter-spacing: 0.08em;
+    display: block;
+    text-align: left;
+    /* 6. 清空桌面竖排的列间距 */
+    margin-left: 0 !important;
+    /* 7. 横排行间距 */
+    margin-bottom: 0.3em;
+    }
+
+    .banner-poem-line:last-child {
+    margin-bottom: 0;
     }
     }
 </style>

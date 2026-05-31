@@ -21,7 +21,7 @@ export const siteConfig: SiteConfig = {
 		position: "center", // 等同于 `object-position`，仅支持 `top`、`center`、`bottom`，默认值为 `center`。
 		credit: {
 			enable: true, // 显示横幅图片的署名文字。
-			text: "Bing壁纸", // 要显示的署名文字。
+			text: "每日一句", // 要显示的署名文字。
 			url: "", // 可选，原始作品或作者页面的链接。
 		},
 	},
@@ -69,7 +69,7 @@ export const navBarConfig: NavBarConfig = {
 		},
 		{
 			name: "GitHub",
-			url: "https://github.com/saicaca/fuwari", // 内部链接不应包含 base path，系统会自动补上。
+			url: "https://github.com/M01Y02W03", // 内部链接不应包含 base path，系统会自动补上。
 			external: true, // 显示外部链接图标，并在新标签页打开。
 		},
 	],
@@ -86,9 +86,9 @@ export const profileConfig: ProfileConfig = {
 			url: "https://space.bilibili.com/",
 		},
 		{
-			name: "CSDN",
-			icon: "csdn",
-			url: "https://blog.csdn.net/2301_79263977?spm=1000.2115.3001.5343",
+			name: "GitHub",
+			icon: "fa6-brands:github",
+			url: "https://github.com/M01Y02W03",
 		},
 		{
 			name: "Gitee",
@@ -96,14 +96,14 @@ export const profileConfig: ProfileConfig = {
 			url: "https://gitee.com/wei_flzxsqc",
 		},
 		{
+			name: "CSDN",
+			icon: "csdn",
+			url: "https://blog.csdn.net/2301_79263977?spm=1000.2115.3001.5343",
+		},
+		{
 			name: "Steam",
 			icon: "fa6-brands:steam",
 			url: "https://steamcommunity.com/profiles/76561199561664213/",
-		},
-		{
-			name: "GitHub",
-			icon: "fa6-brands:github",
-			url: "https://github.com/M01Y02W03",
 		},
 	],
 };

@@ -22,8 +22,8 @@ const getHost = (homepageUrl: string) => {
 ---
 
 <MainGridLayout title="友链" description="“告别这种事是有几分伤感，但你这么想，有告别才会有重逢。有重逢，便有了那杯装满故事的酒可敬了”">
-	<div class="relative overflow-hidden rounded-[var(--radius-large)] border border-black/10 dark:border-white/10 bg-white/70 dark:bg-black/30 shadow-xl backdrop-blur-xl">
-		<div class="relative z-10 px-5 md:px-8 py-6 md:py-8">
+	<div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-9 py-6 relative w-full">
 			<div class="flex items-start gap-4">
 				<div class="mt-1 h-12 w-1.5 rounded-full bg-[var(--primary)]"></div>
 				<div class="min-w-0">
@@ -36,7 +36,7 @@ const getHost = (homepageUrl: string) => {
 
 			<div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
 				{links.map((friend) => (
-					<article class="group/card relative flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-black/10 dark:border-white/10 bg-white/60 dark:bg-black/25 p-4 md:p-5 shadow-lg backdrop-blur-xl transition">
+					<article class="group/card relative flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-black/15 dark:border-white/20 bg-black/5 dark:bg-white/8 p-4 md:p-5 shadow-xl backdrop-blur-2xl transition before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/8 before:to-transparent before:pointer-events-none">
 						<div class="flex items-start gap-4">
 							<div class="h-20 w-20 shrink-0 rounded-[1.2rem] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
 								<img
@@ -67,14 +67,14 @@ const getHost = (homepageUrl: string) => {
 								href={friend.homepageUrl}
 								target="_blank"
 								rel="noopener"
-								class="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 font-bold text-white transition hover:brightness-105 active:scale-[0.99]"
+								class="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-black/25 dark:border-white/25 bg-black/8 dark:bg-white/12 px-4 font-bold text-black/80 dark:text-white/85 backdrop-blur-md transition hover:bg-black/15 hover:text-black active:scale-[0.99] dark:hover:bg-white/20 dark:hover:text-white"
 							>
 								<Icon name="fa6-solid:arrow-up-right-from-square" class="text-[0.9rem]"></Icon>
 								访问
 							</a>
 							<button
 								type="button"
-								class="group/copy flex h-11 w-11 items-center justify-center rounded-xl bg-black/8 text-black/55 transition hover:bg-black/12 hover:text-black/75 active:scale-95 dark:bg-white/10 dark:text-white/55 dark:hover:bg-white/15 dark:hover:text-white/80"
+								class="group/copy flex h-11 w-11 items-center justify-center rounded-xl border border-black/25 dark:border-white/25 bg-black/8 dark:bg-white/12 text-black/55 dark:text-white/55 backdrop-blur-md transition hover:bg-black/15 hover:text-black/75 active:scale-95 dark:hover:bg-white/20 dark:hover:text-white/80"
 								data-copy-link={friend.homepageUrl}
 								aria-label={`复制 ${friend.nickname} 的主页链接`}
 								title="复制链接"
