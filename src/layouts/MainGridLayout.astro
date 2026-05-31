@@ -3,8 +3,6 @@ import BackToTop from "@components/control/BackToTop.astro";
 import Footer from "@components/Footer.astro";
 import Navbar from "@components/Navbar.astro";
 import BannerPoem from "@components/widget/BannerPoem.astro";
-import MusicControl from "@components/widget/MusicControl.svelte";
-import MusicWelcomePopup from "@components/widget/MusicWelcomePopup.svelte";
 import SideBar from "@components/widget/SideBar.astro";
 import type { MarkdownHeading } from "astro";
 import { Icon } from "astro-icon/components";
@@ -128,7 +126,4 @@ const mainPanelTop = siteConfig.banner.enable
         {!siteConfig.toc.enable && <div id="toc"></div>}
     </div>
 </div>
-
-<MusicWelcomePopup client:only="svelte"></MusicWelcomePopup>
-<MusicControl client:only="svelte"></MusicControl>
 </Layout>
