@@ -129,10 +129,21 @@ const bannerOffset =
 					}
 			}
 
-			// 1. 刷新页面时优先回退到默认主题色，等待 banner 自动取色完成后再覆盖
+			const bannerHueBootKey = '__bannerHueBootstrapped';
+
+			/*
+				1. 仅在整页首次加载时回退到默认主题色，等待 banner 自动取色完成后再覆盖。
+				2. Swup 站内切页仍复用同一个 window，这里必须保留已写入的 hue，不能重置回默认值。
+			*/
 			if (autoBannerHue) {
-				localStorage.setItem('hue', String(configHue));
-				document.documentElement.style.setProperty('--hue', String(configHue));
+				if (!window[bannerHueBootKey]) {
+					window[bannerHueBootKey] = true;
+					localStorage.setItem('hue', String(configHue));
+					document.documentElement.style.setProperty('--hue', String(configHue));
+				} else {
+					const hue = localStorage.getItem('hue') || configHue;
+					document.documentElement.style.setProperty('--hue', hue);
+				}
 			} else {
 				const hue = localStorage.getItem('hue') || configHue;
 				document.documentElement.style.setProperty('--hue', hue);
