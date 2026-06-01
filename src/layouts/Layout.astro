@@ -366,7 +366,26 @@ function showBanner() {
 		return;
 	}
 
-	banner.classList.remove('opacity-0', 'scale-105');
+	const bannerImage = banner.querySelector('img');
+	const revealBanner = () => {
+		banner.classList.remove('opacity-0', 'scale-105');
+	};
+
+	/*
+		远程横幅在运行时可能会被替换成支持 CORS 的代理地址。
+		这里等待最终图片加载完成后再显示，避免用户先看到空白蒙层或错误图。
+	*/
+	if (!(bannerImage instanceof HTMLImageElement)) {
+		revealBanner();
+		return;
+	}
+
+	if (bannerImage.complete && bannerImage.naturalWidth > 0) {
+		revealBanner();
+		return;
+	}
+
+	bannerImage.addEventListener("load", revealBanner, { once: true });
 }
 
 const BANNER_HUE_STATE_KEY = "__bannerHueState";
@@ -380,6 +399,54 @@ const bannerHueState = bannerHueWindow[BANNER_HUE_STATE_KEY] || (bannerHueWindow
 	initialized: false,
 	lastImageSrc: "",
 });
+
+function buildCorsSafeBannerUrl(sourceUrl: string) {
+	const encodedSourceUrl = encodeURIComponent(sourceUrl);
+	return `https://wsrv.nl/?url=${encodedSourceUrl}&output=jpg&cb=${Date.now()}`;
+}
+
+function prepareBannerImage() {
+	if (!siteConfig.banner.enable) {
+		return null;
+	}
+
+	const bannerImage = document.querySelector("#banner img");
+	if (!(bannerImage instanceof HTMLImageElement)) {
+		return null;
+	}
+
+	if (!/^https?:\/\//i.test(siteConfig.banner.src)) {
+		return bannerImage;
+	}
+
+	if (bannerImage.dataset.bannerPrepared === "true") {
+		return bannerImage;
+	}
+
+	bannerImage.dataset.bannerPrepared = "true";
+	const fallbackSrc = bannerImage.currentSrc || bannerImage.src;
+	const proxySrc = buildCorsSafeBannerUrl(siteConfig.banner.src);
+
+	// 1. 远程图片源不支持 CORS 时，改走公共图片代理，保证静态站点也能安全取色
+	bannerImage.crossOrigin = "anonymous";
+	bannerImage.referrerPolicy = "no-referrer";
+	bannerImage.addEventListener("error", () => {
+		/*
+			代理异常时回退到原始横幅，至少保证图片仍可展示。
+			此时自动取色会退回默认主题色，不会影响页面继续访问。
+		*/
+		if (bannerImage.dataset.bannerFallbackApplied === "true") {
+			return;
+		}
+
+		bannerImage.dataset.bannerFallbackApplied = "true";
+		bannerImage.removeAttribute("crossorigin");
+		bannerImage.src = fallbackSrc;
+	}, { once: true });
+	bannerImage.src = proxySrc;
+
+	return bannerImage;
+}
 
 function rgbToHsl(r: number, g: number, b: number) {
 	const red = r / 255;
@@ -484,7 +551,7 @@ function applyBannerHueIfNeeded() {
 		return;
 	}
 
-	const bannerImage = document.querySelector("#banner img");
+	const bannerImage = prepareBannerImage();
 	if (!(bannerImage instanceof HTMLImageElement)) {
 		return;
 	}
@@ -520,6 +587,7 @@ function init() {
 	loadTheme();
 	loadHue();
 	initCustomScrollbar();
+	prepareBannerImage();
 	showBanner();
 	applyBannerHueIfNeeded();
 }
