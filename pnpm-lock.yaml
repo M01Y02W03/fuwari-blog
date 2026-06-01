@@ -53,6 +53,9 @@ importers:
       '@iconify/svelte':
         specifier: ^4.2.0
         version: 4.2.0(svelte@5.39.8)
+      '@material/material-color-utilities':
+        specifier: ^0.4.0
+        version: 0.4.0
       '@swup/astro':
         specifier: ^1.7.0
         version: 1.7.0(@types/babel__core@7.20.5)
@@ -1439,6 +1442,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@material/material-color-utilities@0.4.0':
+    resolution: {integrity: sha512-dlq6VExJReb8dhjj3a/yTigr3ncNwoFmL5Iy2ENtbDX03EmNeOEdZ+vsaGrj7RTuO+mB7L58II4LCsl4NpM8uw==}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -6941,6 +6947,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@material/material-color-utilities@0.4.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
