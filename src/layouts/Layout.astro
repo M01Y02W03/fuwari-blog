@@ -432,8 +432,6 @@ const setup = () => {
 		if (heightExtend) {
 			heightExtend.classList.remove('hidden')
 		}
-
-		window.__loadBannerPoem?.();
 	});
 	window.swup.hooks.on('visit:end', (_visit: {to: {url: string}}) => {
 		setTimeout(() => {

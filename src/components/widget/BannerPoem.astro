@@ -2,6 +2,7 @@
 const rootId = "banner-poem";
 const contentId = "banner-poem-content";
 const metaId = "banner-poem-meta";
+const tipId = "banner-poem-tip";
 ---
 
 <div
@@ -20,6 +21,9 @@ const metaId = "banner-poem-meta";
 
         <!-- 诗词出处区域 -->
         <div id={metaId} class="banner-poem-meta-wrap banner-poem-fade-hidden flex flex-col items-center gap-1 text-xs sm:text-sm text-[rgba(100,180,255,0.9)]"></div>
+
+        <!-- 轻提示区域 -->
+        <div id={tipId} class="banner-poem-tip" aria-live="polite"></div>
     </div>
 </div>
 
@@ -27,18 +31,32 @@ const metaId = "banner-poem-meta";
     const rootId = "banner-poem";
     const contentId = "banner-poem-content";
     const metaId = "banner-poem-meta";
+    const tipId = "banner-poem-tip";
 
     const POEM_API = "https://v1.jinrishici.com/all.json";
+    const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+    const MANUAL_REFRESH_COOLDOWN_MS = 10 * 1000;
+    const TIP_VISIBLE_DURATION_MS = 2200;
+    const STATE_KEY = "__bannerPoemState";
 
-    // 滚动控制状态
-    let lastScrollY = 0;
-    let ticking = false;
+    const state = window[STATE_KEY] || (window[STATE_KEY] = {
+        initialized: false,
+        scrollBound: false,
+        intervalId: null,
+        lastScrollY: 0,
+        ticking: false,
+        isLoading: false,
+        lastManualRefreshAt: 0,
+        requestSerial: 0,
+        tipTimer: null,
+        currentPoem: null,
+    });
 
     function getEl(id) {
         return document.getElementById(id);
     }
 
-    // 针对 V1 接口的扁平数据结构进行解析：直接读取 data.author 和 data.origin
+    // 1. 解析诗词出处信息
     function formatMeta(data) {
         const parts = [];
 
@@ -61,7 +79,25 @@ const metaId = "banner-poem-meta";
         return segments.length > 0 ? segments : [text];
     }
 
-    // 带动画的诗词渲染
+    // 2. 显示轻提示，避免频繁点击时继续请求接口
+    function showTip(message) {
+        const tipEl = getEl(tipId);
+        if (!tipEl) return;
+
+        if (state.tipTimer) {
+            window.clearTimeout(state.tipTimer);
+        }
+
+        tipEl.textContent = message;
+        tipEl.classList.add("banner-poem-tip-visible");
+
+        state.tipTimer = window.setTimeout(() => {
+            tipEl.classList.remove("banner-poem-tip-visible");
+            state.tipTimer = null;
+        }, TIP_VISIBLE_DURATION_MS);
+    }
+
+    // 3. 渲染诗词正文
     function renderPoemLinesWithAnimation(lines, animate = false) {
         const contentEl = getEl(contentId);
         if (!contentEl) return;
@@ -103,12 +139,14 @@ const metaId = "banner-poem-meta";
         }
     }
 
+    // 4. 渲染当前诗词与出处
     function renderFallback(message, metaText, animate = false) {
         const metaEl = getEl(metaId);
 
         renderPoemLinesWithAnimation(splitPoemLines(message), animate);
 
         if (metaEl) {
+            metaEl.classList.remove("banner-poem-meta-animate");
             if (animate) {
                 metaEl.textContent = metaText;
                 metaEl.classList.remove("banner-poem-fade-hidden");
@@ -120,14 +158,22 @@ const metaId = "banner-poem-meta";
         }
     }
 
-    // 滚动控制：下滑收起，上滑展开
+    // 5. 恢复已缓存的诗词，避免站内切换时再次请求接口
+    function restoreCachedPoem() {
+        if (!state.currentPoem) return false;
+
+        renderFallback(state.currentPoem.contentText, state.currentPoem.metaText, false);
+        return true;
+    }
+
+    // 6. 滚动控制：下滑收起，上滑展开
     function handleScroll() {
         const rootEl = getEl(rootId);
         if (!rootEl) return;
 
         const currentScrollY = window.scrollY;
-        const isScrollingDown = currentScrollY > lastScrollY;
-        const scrollDelta = Math.abs(currentScrollY - lastScrollY);
+        const isScrollingDown = currentScrollY > state.lastScrollY;
+        const scrollDelta = Math.abs(currentScrollY - state.lastScrollY);
 
         // 只有当滚动距离超过阈值时才触发
         if (scrollDelta > 5) {
@@ -140,26 +186,51 @@ const metaId = "banner-poem-meta";
                 rootEl.classList.remove("banner-poem-hidden");
                 rootEl.classList.add("banner-poem-visible");
             }
-            lastScrollY = currentScrollY;
+            state.lastScrollY = currentScrollY;
         }
 
-        ticking = false;
+        state.ticking = false;
     }
 
     function onScroll() {
-        if (!ticking) {
+        if (!state.ticking) {
             window.requestAnimationFrame(handleScroll);
-            ticking = true;
+            state.ticking = true;
         }
     }
 
-    function loadPoem() {
-        const pageKey = window.location.href;
-        // 初始清空内容区域，不显示"正在寻句"
+    // 7. 统一处理诗词请求，只保留首屏加载、定时刷新和按钮刷新
+    function loadPoem({ source = "auto" } = {}) {
+        const now = Date.now();
+
+        if (source === "manual") {
+            if (state.isLoading) {
+                showTip("诗词加载中，请稍候");
+                return;
+            }
+
+            const elapsed = now - state.lastManualRefreshAt;
+            if (elapsed < MANUAL_REFRESH_COOLDOWN_MS) {
+                const remainSeconds = Math.ceil((MANUAL_REFRESH_COOLDOWN_MS - elapsed) / 1000);
+                showTip(`点击过快，请 ${remainSeconds} 秒后再试`);
+                return;
+            }
+
+            state.lastManualRefreshAt = now;
+        } else if (state.isLoading) {
+            return;
+        }
+
+        const requestId = ++state.requestSerial;
         const contentEl = getEl(contentId);
         const metaEl = getEl(metaId);
-        if (contentEl) contentEl.replaceChildren();
-        if (metaEl) metaEl.textContent = "";
+        state.isLoading = true;
+
+        // 仅首次整页加载时清空内容，避免定时刷新或手动刷新时出现闪烁
+        if (source === "initial") {
+            if (contentEl) contentEl.replaceChildren();
+            if (metaEl) metaEl.textContent = "";
+        }
 
         fetch(POEM_API)
             .then((res) => {
@@ -167,48 +238,65 @@ const metaId = "banner-poem-meta";
                 return res.json();
             })
             .then((data) => {
-                if (window.location.href !== pageKey) return;
+                if (requestId !== state.requestSerial) return;
 
                 const contentText = data.content || "暂无诗句";
                 const metaText = formatMeta(data);
+                state.currentPoem = { contentText, metaText };
 
                 // 带渐显动画渲染诗词
                 renderFallback(contentText, metaText, true);
             })
             .catch((err) => {
-                if (window.location.href !== pageKey) return;
+                if (requestId !== state.requestSerial) return;
                 console.error("今日诗词加载失败：", err);
+                state.currentPoem = {
+                    contentText: "古风清句暂未可得",
+                    metaText: "请稍后重试",
+                };
                 renderFallback("古风清句暂未可得", "请稍后重试", false);
+            })
+            .finally(() => {
+                if (requestId !== state.requestSerial) return;
+                state.isLoading = false;
             });
     }
 
-    // 1. 初始化滚动监听
-    window.addEventListener("scroll", onScroll, { passive: true });
+    // 8. 绑定刷新按钮，阻止默认跳转并做点击限流
+    function bindRefreshButton() {
+        const refreshButton = document.getElementById("banner-credit");
+        if (!refreshButton || refreshButton.dataset.bannerPoemBound === "true") return;
 
-    // 2. 首次加载诗词
-    loadPoem();
+        refreshButton.dataset.bannerPoemBound = "true";
+        refreshButton.addEventListener("click", (event) => {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+            loadPoem({ source: "manual" });
+        });
+    }
 
-    // 3. 监听 Swup 页面切换事件，每次导航后重新获取诗词
-    function setupSwupListener() {
-        if (window.swup?.hooks) {
-            window.swup.hooks.on("page:view", loadPoem);
-        } else {
-            document.addEventListener("swup:enable", () => {
-                window.swup.hooks.on("page:view", loadPoem);
-            });
+    // 9. 初始化组件，只在整页首次加载时请求一次接口
+    function initBannerPoem() {
+        bindRefreshButton();
+
+        if (!state.scrollBound) {
+            window.addEventListener("scroll", onScroll, { passive: true });
+            state.scrollBound = true;
         }
+
+        if (state.initialized) {
+            restoreCachedPoem();
+            return;
+        }
+
+        state.initialized = true;
+        loadPoem({ source: "initial" });
+        state.intervalId = window.setInterval(() => {
+            loadPoem({ source: "auto" });
+        }, AUTO_REFRESH_INTERVAL_MS);
     }
-    setupSwupListener();
 
-    // 4. 点击"每日一句"刷新诗句
-    document.getElementById("banner-credit")?.addEventListener("click", (e) => {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        loadPoem();
-    });
-
-    // 5. 每 5 分钟自动刷新诗句
-    setInterval(loadPoem, 5 * 60 * 1000);
+    initBannerPoem();
 </script>
 
 <style>
@@ -278,6 +366,23 @@ const metaId = "banner-poem-meta";
     0 0 4px rgba(218, 165, 32, 1),
     0 0 8px rgba(218, 165, 32, 0.8),
     0 0 14px rgba(218, 165, 32, 0.5);
+    }
+
+.banner-poem-tip {
+    min-height: 1.25rem;
+    font-size: 0.75rem;
+    color: rgba(255, 230, 160, 0.92);
+    text-shadow:
+    0 0 2px rgba(0, 0, 0, 0.85),
+    0 0 8px rgba(255, 196, 86, 0.28);
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+.banner-poem-tip-visible {
+    opacity: 1;
+    transform: translateY(0);
     }
 
 /* 滚动控制过渡动画 */
