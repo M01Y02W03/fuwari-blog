@@ -19,12 +19,25 @@ export function getHue(): number {
 }
 
 export function setHue(hue: number): void {
-	localStorage.setItem("hue", String(hue));
 	const r = document.querySelector(":root") as HTMLElement;
 	if (!r) {
 		return;
 	}
-	r.style.setProperty("--hue", String(hue));
+
+	const nextHue = String(hue);
+	const currentHue = r.style.getPropertyValue("--hue").trim();
+	const storedHue = localStorage.getItem("hue");
+	if (currentHue === nextHue && storedHue === nextHue) {
+		return;
+	}
+
+	localStorage.setItem("hue", nextHue);
+	r.style.setProperty("--hue", nextHue);
+	window.dispatchEvent(
+		new CustomEvent("theme-hue-change", {
+			detail: { hue },
+		}),
+	);
 }
 
 export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {

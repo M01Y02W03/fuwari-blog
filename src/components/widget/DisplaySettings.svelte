@@ -3,6 +3,7 @@ import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import Icon from "@iconify/svelte";
 import { getDefaultHue, getHue, setHue } from "@utils/setting-utils";
+import { onMount } from "svelte";
 
 let hue = getHue();
 const defaultHue = getDefaultHue();
@@ -10,6 +11,23 @@ const defaultHue = getDefaultHue();
 function resetHue() {
 	hue = getDefaultHue();
 }
+
+onMount(() => {
+	// 1. 同步外部自动取色后的主题色，保证面板数值与当前系统颜色一致
+	const syncHue = (event: Event) => {
+		if (!(event instanceof CustomEvent) || typeof event.detail?.hue !== "number") {
+			hue = getHue();
+			return;
+		}
+
+		hue = event.detail.hue;
+	};
+
+	window.addEventListener("theme-hue-change", syncHue);
+	return () => {
+		window.removeEventListener("theme-hue-change", syncHue);
+	};
+});
 
 $: if (hue || hue === 0) {
 	setHue(hue);
