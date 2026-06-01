@@ -46,6 +46,7 @@ if (!banner || typeof banner !== "string" || banner.trim() === "") {
 banner = siteConfig.banner.src;
 
 const enableBanner = siteConfig.banner.enable;
+const autoBannerHue = enableBanner;
 
 let pageTitle: string;
 if (title) {
@@ -110,7 +111,7 @@ const bannerOffset =
 		))}
 
 		<!-- Set the theme before the page is rendered to avoid a flash -->
-		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
+		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue, autoBannerHue}}>
 			// Load the theme from local storage
 			const theme = localStorage.getItem('theme') || DEFAULT_THEME;
 			switch (theme) {
@@ -128,9 +129,14 @@ const bannerOffset =
 					}
 			}
 
-			// Load the hue from local storage
-			const hue = localStorage.getItem('hue') || configHue;
-			document.documentElement.style.setProperty('--hue', hue);
+			// 1. 刷新页面时优先回退到默认主题色，等待 banner 自动取色完成后再覆盖
+			if (autoBannerHue) {
+				localStorage.setItem('hue', String(configHue));
+				document.documentElement.style.setProperty('--hue', String(configHue));
+			} else {
+				const hue = localStorage.getItem('hue') || configHue;
+				document.documentElement.style.setProperty('--hue', hue);
+			}
 
 			// calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
 			let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
@@ -363,12 +369,159 @@ function showBanner() {
 	banner.classList.remove('opacity-0', 'scale-105');
 }
 
+const BANNER_HUE_STATE_KEY = "__bannerHueState";
+const bannerHueWindow = window as Window & {
+	[BANNER_HUE_STATE_KEY]?: {
+		initialized: boolean;
+		lastImageSrc: string;
+	};
+};
+const bannerHueState = bannerHueWindow[BANNER_HUE_STATE_KEY] || (bannerHueWindow[BANNER_HUE_STATE_KEY] = {
+	initialized: false,
+	lastImageSrc: "",
+});
+
+function rgbToHsl(r: number, g: number, b: number) {
+	const red = r / 255;
+	const green = g / 255;
+	const blue = b / 255;
+	const max = Math.max(red, green, blue);
+	const min = Math.min(red, green, blue);
+	const lightness = (max + min) / 2;
+	const delta = max - min;
+
+	if (delta === 0) {
+		return {
+			hue: 0,
+			saturation: 0,
+			lightness,
+		};
+	}
+
+	const saturation =
+		lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+
+	let hue = 0;
+	if (max === red) {
+		hue = ((green - blue) / delta) % 6;
+	} else if (max === green) {
+		hue = (blue - red) / delta + 2;
+	} else {
+		hue = (red - green) / delta + 4;
+	}
+
+	return {
+		hue: Math.round((hue * 60 + 360) % 360),
+		saturation,
+		lightness,
+	};
+}
+
+function extractHueFromBannerImage(image: HTMLImageElement) {
+	const canvas = document.createElement("canvas");
+	const context = canvas.getContext("2d", { willReadFrequently: true });
+	if (!context) {
+		return null;
+	}
+
+	const naturalWidth = image.naturalWidth || 1;
+	const naturalHeight = image.naturalHeight || 1;
+	const sampleWidth = 48;
+	const sampleHeight = Math.max(
+		1,
+		Math.round((naturalHeight / naturalWidth) * sampleWidth),
+	);
+
+	canvas.width = sampleWidth;
+	canvas.height = sampleHeight;
+	context.drawImage(image, 0, 0, sampleWidth, sampleHeight);
+
+	try {
+		const imageData = context.getImageData(0, 0, sampleWidth, sampleHeight).data;
+		let totalWeight = 0;
+		let hueX = 0;
+		let hueY = 0;
+
+		for (let index = 0; index < imageData.length; index += 16) {
+			const alpha = imageData[index + 3] / 255;
+			if (alpha < 0.85) {
+				continue;
+			}
+
+			const { hue, saturation, lightness } = rgbToHsl(
+				imageData[index],
+				imageData[index + 1],
+				imageData[index + 2],
+			);
+			if (saturation < 0.12 || lightness < 0.12 || lightness > 0.88) {
+				continue;
+			}
+
+			const weight = saturation * alpha * (1 - Math.abs(lightness - 0.5));
+			if (weight <= 0) {
+				continue;
+			}
+
+			const hueRadians = (hue * Math.PI) / 180;
+			hueX += Math.cos(hueRadians) * weight;
+			hueY += Math.sin(hueRadians) * weight;
+			totalWeight += weight;
+		}
+
+		if (totalWeight <= 0) {
+			return null;
+		}
+
+		return Math.round((Math.atan2(hueY, hueX) * 180) / Math.PI + 360) % 360;
+	} catch (error) {
+		console.error("Banner hue extraction failed:", error);
+		return null;
+	}
+}
+
+function applyBannerHueIfNeeded() {
+	if (!siteConfig.banner.enable) {
+		return;
+	}
+
+	const bannerImage = document.querySelector("#banner img");
+	if (!(bannerImage instanceof HTMLImageElement)) {
+		return;
+	}
+
+	const imageSrc = bannerImage.currentSrc || bannerImage.src;
+	if (bannerHueState.initialized && bannerHueState.lastImageSrc === imageSrc) {
+		return;
+	}
+
+	// 1. 等待 banner 图片真正加载完成后再取色，避免读到空白像素
+	const syncHueFromImage = () => {
+		const hue = extractHueFromBannerImage(bannerImage);
+		if (hue === null) {
+			return;
+		}
+
+		// 2. 取到有效色相后立即写回系统主题色，并记录当前横幅来源
+		setHue(hue);
+		bannerHueState.initialized = true;
+		bannerHueState.lastImageSrc = imageSrc;
+	};
+
+	if (bannerImage.complete && bannerImage.naturalWidth > 0) {
+		syncHueFromImage();
+		return;
+	}
+
+	bannerImage.addEventListener("load", syncHueFromImage, { once: true });
+}
+
 function init() {
 	// disableAnimation()()		// TODO
 	loadTheme();
 	loadHue();
 	initCustomScrollbar();
 	showBanner();
+	applyBannerHueIfNeeded();
 }
 
 /* Load settings when entering the site */

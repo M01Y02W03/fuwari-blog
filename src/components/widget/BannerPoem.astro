@@ -28,6 +28,7 @@ const tipId = "banner-poem-tip";
 </div>
 
 <script>
+    // @ts-nocheck
     const rootId = "banner-poem";
     const contentId = "banner-poem-content";
     const metaId = "banner-poem-meta";
@@ -39,7 +40,8 @@ const tipId = "banner-poem-tip";
     const TIP_VISIBLE_DURATION_MS = 2200;
     const STATE_KEY = "__bannerPoemState";
 
-    const state = window[STATE_KEY] || (window[STATE_KEY] = {
+    const bannerPoemWindow = window;
+    const state = bannerPoemWindow[STATE_KEY] || (bannerPoemWindow[STATE_KEY] = {
         initialized: false,
         scrollBound: false,
         intervalId: null,
