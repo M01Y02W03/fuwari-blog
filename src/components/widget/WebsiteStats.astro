@@ -11,8 +11,14 @@ interface Props {
 const className = Astro.props.class;
 const style = Astro.props.style;
 
-const websiteId = import.meta.env.UMAMI_WEBSITE_ID;
-const apiKey = import.meta.env.UMAMI_API_KEY;
+const websiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID;
+const apiKey = import.meta.env.PUBLIC_UMAMI_API_KEY;
+
+// 调试：检查环境变量是否正确读取
+console.log("[Umami Server] 环境变量:", {
+	websiteId,
+	apiKey: apiKey ? "***" + apiKey.slice(-4) : "未设置",
+});
 const launchDate = new Date(2026, 4, 26);
 const today = new Date();
 const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -29,8 +35,7 @@ const articleCount = numberFormatter.format(postCount);
 const runningDaysText = numberFormatter.format(runningDays);
 ---
 
-<WidgetLayout name="网站信息" id="website-stats" class={className} style={style}
-              data-umami-website-id={websiteId} data-umami-api-key={apiKey}>
+<WidgetLayout name="网站信息" id="website-stats" class={className} style={style}>
 	<div class="grid grid-cols-2 gap-3 pb-1">
 		<div class="rounded-xl bg-[var(--btn-regular-bg)] border border-black/5 dark:border-white/5 px-3 py-3 flex flex-col items-center text-center gap-1.5">
 			<div class="flex items-center justify-center gap-1.5 text-black/45 dark:text-white/45 text-xs">
@@ -66,37 +71,47 @@ const runningDaysText = numberFormatter.format(runningDays);
 	</div>
 </WidgetLayout>
 
-<script>
-	const widget = document.getElementById("website-stats");
-	if (widget) {
-		const websiteId = widget.getAttribute("data-umami-website-id");
-		const apiKey = widget.getAttribute("data-umami-api-key");
+<script define:vars={{ websiteId, apiKey }}>
+	// 1. 页面加载时立即获取 Umami 统计数据
+	console.log("[Umami] 开始加载统计数据...");
+	console.log("[Umami] 配置信息:", { websiteId, apiKey: apiKey ? "***" + apiKey.slice(-4) : "未设置" });
 
-		if (websiteId && apiKey) {
-			// 1. 构建带时间范围的 API URL，startAt=0 表示从网站创建开始统计
-			const endAt = Date.now();
-			fetch(`https://api.umami.is/v1/websites/${websiteId}/stats?startAt=0&endAt=${endAt}`, {
-				headers: { "x-umami-api-key": apiKey },
+	if (!websiteId || !apiKey) {
+		console.error("[Umami] 缺少必要的配置：websiteId 或 apiKey 为空");
+	} else {
+		// 2. 构建 API URL，startAt=0 表示从网站创建开始统计
+		const endAt = Date.now();
+		const apiUrl = `https://api.umami.is/v1/websites/${websiteId}/stats?startAt=0&endAt=${endAt}`;
+		console.log("[Umami] 请求 URL:", apiUrl);
+
+		// 3. 发起 API 请求
+		fetch(apiUrl, {
+			headers: { "x-umami-api-key": apiKey },
+		})
+			.then((res) => {
+				console.log("[Umami] 响应状态:", res.status, res.statusText);
+				if (!res.ok) throw new Error(`Umami API error: ${res.status}`);
+				return res.json();
 			})
-				.then((res) => {
-					if (!res.ok) throw new Error("Umami API error");
-					return res.json();
-				})
-				.then((data) => {
-					const pageviewsEl = document.getElementById("umami-pageviews");
-					const visitsEl = document.getElementById("umami-visits");
-					const fmt = new Intl.NumberFormat("zh-CN");
-					// 2. 修复：API 返回的是直接的数字，不是 { value: number } 结构
-					if (pageviewsEl && data?.pageviews != null) {
-						pageviewsEl.textContent = fmt.format(data.pageviews);
-					}
-					if (visitsEl && data?.visits != null) {
-						visitsEl.textContent = fmt.format(data.visits);
-					}
-				})
-				.catch((err) => {
-					console.error("获取 Umami 统计数据失败:", err);
-				});
-		}
+			.then((data) => {
+				console.log("[Umami] 获取数据成功:", data);
+
+				const pageviewsEl = document.getElementById("umami-pageviews");
+				const visitsEl = document.getElementById("umami-visits");
+				const fmt = new Intl.NumberFormat("zh-CN");
+
+				// 4. 更新页面显示
+				if (pageviewsEl && data?.pageviews != null) {
+					pageviewsEl.textContent = fmt.format(data.pageviews);
+					console.log("[Umami] 已更新浏览量:", data.pageviews);
+				}
+				if (visitsEl && data?.visits != null) {
+					visitsEl.textContent = fmt.format(data.visits);
+					console.log("[Umami] 已更新访问次数:", data.visits);
+				}
+			})
+			.catch((err) => {
+				console.error("[Umami] 获取统计数据失败:", err);
+			});
 	}
 </script>
