@@ -193,7 +193,16 @@ const visiblePageNumbers = totalPages <= 3
 			</div>
 
 			<!-- Controls -->
-			<div class="flex items-center justify-center gap-4 sm:gap-6 w-full mt-1">
+			<div class="flex items-center justify-center gap-2 sm:gap-3 w-full mt-1">
+				<button
+					id="music-btn-loop"
+					class="btn-plain scale-animation rounded-full h-8 w-8 flex items-center justify-center active:scale-90 text-neutral-600 dark:text-neutral-400 hover:text-[var(--primary)] dark:hover:text-[var(--primary)] transition-colors"
+					aria-label="单曲循环"
+					title="单曲循环"
+					type="button"
+				>
+					<Icon name="material-symbols:repeat-one-rounded" class="text-xl sm:text-2xl" />
+				</button>
 				<button id="music-btn-prev" class="btn-plain scale-animation rounded-full h-8 w-8 flex items-center justify-center active:scale-90 text-neutral-600 dark:text-neutral-400 hover:text-[var(--primary)] dark:hover:text-[var(--primary)]" aria-label="上一首">
 					<Icon name="material-symbols:skip-previous-rounded" class="text-2xl sm:text-3xl" />
 				</button>
@@ -203,6 +212,15 @@ const visiblePageNumbers = totalPages <= 3
 				</button>
 				<button id="music-btn-next" class="btn-plain scale-animation rounded-full h-8 w-8 flex items-center justify-center active:scale-90 text-neutral-600 dark:text-neutral-400 hover:text-[var(--primary)] dark:hover:text-[var(--primary)]" aria-label="下一首">
 					<Icon name="material-symbols:skip-next-rounded" class="text-2xl sm:text-3xl" />
+				</button>
+				<button
+					id="music-btn-shuffle"
+					class="btn-plain scale-animation rounded-full h-8 w-8 flex items-center justify-center active:scale-90 text-neutral-600 dark:text-neutral-400 hover:text-[var(--primary)] dark:hover:text-[var(--primary)] transition-colors"
+					aria-label="随机播放"
+					title="随机播放"
+					type="button"
+				>
+					<Icon name="material-symbols:shuffle-rounded" class="text-xl sm:text-2xl" />
 				</button>
 			</div>
 		</div>
@@ -236,6 +254,8 @@ const visiblePageNumbers = totalPages <= 3
 	const playBtn = document.getElementById("music-btn-play");
 	const prevTrackBtn = document.getElementById("music-btn-prev");
 	const nextTrackBtn = document.getElementById("music-btn-next");
+	const loopBtn = document.getElementById("music-btn-loop");
+	const shuffleBtn = document.getElementById("music-btn-shuffle");
 	const iconPlay = document.getElementById("music-icon-play");
 	const iconPause = document.getElementById("music-icon-pause");
 
@@ -248,8 +268,12 @@ const visiblePageNumbers = totalPages <= 3
 		let currentTrackIndex = -1;
 		let isPlayerView = false;
 		let isDraggingProgress = false;
+		let playMode: "sequential" | "single-loop" | "shuffle" = "sequential";
 
 		const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+		const isPanelClosed = () => panel.classList.contains("float-panel-closed");
+		const closePanel = () => panel.classList.add("float-panel-closed");
+		const togglePanel = () => panel.classList.toggle("float-panel-closed");
 
 		const syncWindowForPage = (pageNumber: number) => {
 			if (totalPages <= 3) {
@@ -311,16 +335,39 @@ const visiblePageNumbers = totalPages <= 3
 			return `${mins}:${secs.toString().padStart(2, "0")}`;
 		};
 
-		// 2. 加载音乐轨道
+		// 2. 同步播放模式按钮与音频行为
+		const updatePlayModeUI = () => {
+			const isSingleLoop = playMode === "single-loop";
+			const isShuffle = playMode === "shuffle";
+
+			audio.loop = isSingleLoop;
+
+			loopBtn?.classList.toggle("text-[var(--primary)]", isSingleLoop);
+			loopBtn?.classList.toggle("bg-[var(--btn-plain-bg-hover)]", isSingleLoop);
+			loopBtn?.setAttribute("aria-pressed", String(isSingleLoop));
+
+			shuffleBtn?.classList.toggle("text-[var(--primary)]", isShuffle);
+			shuffleBtn?.classList.toggle("bg-[var(--btn-plain-bg-hover)]", isShuffle);
+			shuffleBtn?.setAttribute("aria-pressed", String(isShuffle));
+		};
+
+		// 3. 加载音乐轨道
 		const loadTrack = (index: number) => {
 			if (index < 0 || index >= trackNodes.length) return;
 			currentTrackIndex = index;
 			const trackNode = trackNodes[index];
+			const pageNumber = Number(trackNode.getAttribute("data-music-page") ?? "1");
 			
 			const title = trackNode.getAttribute("data-music-title") || "未知标题";
 			const author = trackNode.getAttribute("data-music-author") || "未知歌手";
 			const cover = trackNode.getAttribute("data-music-cover") || "";
 			const url = trackNode.getAttribute("data-music-url") || "";
+
+			if (!Number.isNaN(pageNumber) && pageNumber !== currentPage) {
+				currentPage = pageNumber;
+				syncWindowForPage(pageNumber);
+				renderPagination();
+			}
 
 			if (titleEl) titleEl.textContent = title;
 			if (coverAuthorEl) coverAuthorEl.textContent = `@${author}`;
@@ -335,7 +382,7 @@ const visiblePageNumbers = totalPages <= 3
 				audio.load();
 			}
 			
-			// 3. 在列表中高亮当前播放的音乐
+			// 4. 在列表中高亮当前播放的音乐
 			trackNodes.forEach((node, i) => {
 				node.classList.toggle("bg-black/5", i === index);
 				node.classList.toggle("dark:bg-white/5", i === index);
@@ -374,21 +421,54 @@ const visiblePageNumbers = totalPages <= 3
 			}
 		};
 
+		// 4. 生成随机曲目索引，避免在多曲目场景下原地重复
+		const getRandomTrackIndex = () => {
+			if (trackNodes.length <= 1) {
+				return currentTrackIndex === -1 ? 0 : currentTrackIndex;
+			}
+
+			let nextIndex = currentTrackIndex;
+			while (nextIndex === currentTrackIndex) {
+				nextIndex = Math.floor(Math.random() * trackNodes.length);
+			}
+			return nextIndex;
+		};
+
+		// 5. 根据当前模式切换下一首
 		const playNext = () => {
+			if (playMode === "shuffle") {
+				loadTrack(getRandomTrackIndex());
+				audio.play().catch(e => console.error(e));
+				return;
+			}
+
 			let nextIndex = currentTrackIndex + 1;
 			if (nextIndex >= trackNodes.length) nextIndex = 0;
 			loadTrack(nextIndex);
 			audio.play().catch(e => console.error(e));
 		};
 
+		// 6. 根据当前模式切换上一首
 		const playPrev = () => {
+			if (playMode === "shuffle") {
+				loadTrack(getRandomTrackIndex());
+				audio.play().catch(e => console.error(e));
+				return;
+			}
+
 			let prevIndex = currentTrackIndex - 1;
 			if (prevIndex < 0) prevIndex = trackNodes.length - 1;
 			loadTrack(prevIndex);
 			audio.play().catch(e => console.error(e));
 		};
 
-		// 4. 切换视图（列表或播放器）
+		// 7. 切换播放模式；重复点击当前模式时回到顺序播放
+		const setPlayMode = (mode: "single-loop" | "shuffle") => {
+			playMode = playMode === mode ? "sequential" : mode;
+			updatePlayModeUI();
+		};
+
+		// 8. 切换视图（列表或播放器）
 		const toggleView = (forcePlayer?: boolean) => {
 			isPlayerView = forcePlayer !== undefined ? forcePlayer : !isPlayerView;
 			if (listView && playerView) {
@@ -398,7 +478,7 @@ const visiblePageNumbers = totalPages <= 3
 			}
 		};
 
-		// 5. 事件监听绑定
+		// 9. 事件监听绑定
 		viewToggleBtn?.addEventListener("click", (e) => {
 			e.stopPropagation();
 			toggleView();
@@ -430,6 +510,16 @@ const visiblePageNumbers = totalPages <= 3
 			playNext();
 		});
 
+		loopBtn?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			setPlayMode("single-loop");
+		});
+
+		shuffleBtn?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			setPlayMode("shuffle");
+		});
+
 		audio.addEventListener("play", updatePlayState);
 		audio.addEventListener("pause", updatePlayState);
 		audio.addEventListener("ended", playNext);
@@ -447,7 +537,7 @@ const visiblePageNumbers = totalPages <= 3
 			if (timeDurationEl) timeDurationEl.textContent = formatTime(audio.duration);
 		});
 
-		// 6. 进度条拖动逻辑
+		// 10. 进度条拖动逻辑
 		if (progressContainer) {
 			const updateProgress = (clientX: number) => {
 				const rect = progressContainer.getBoundingClientRect();
@@ -499,7 +589,7 @@ const visiblePageNumbers = totalPages <= 3
 			});
 		}
 
-		// 7. 分页事件
+		// 11. 分页事件
 		prevBtn?.addEventListener("click", (event) => {
 			event.stopPropagation();
 			if (currentPage <= 1) return;
@@ -538,11 +628,20 @@ const visiblePageNumbers = totalPages <= 3
 
 		switchBtn.addEventListener("click", (event) => {
 			event.stopPropagation();
-			panel.classList.toggle("float-panel-closed");
+			togglePanel();
 			renderPagination();
 		});
 
-		// 8. 初始化
+		// 12. 点击弹窗外区域时关闭面板，兼容列表页和播放器页
+		document.addEventListener("pointerdown", (event) => {
+			const target = event.target;
+			if (!(target instanceof Node) || isPanelClosed()) return;
+			if (panel.contains(target) || switchBtn.contains(target)) return;
+			closePanel();
+		});
+
+		// 13. 初始化
+		updatePlayModeUI();
 		renderPagination();
 		if (trackNodes.length > 0) {
 			loadTrack(0);
