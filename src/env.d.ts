@@ -2,6 +2,6 @@
 /// <reference path="../.astro/types.d.ts" />
 
 interface ImportMetaEnv {
-	readonly UMAMI_WEBSITE_ID?: string;
-	readonly UMAMI_API_KEY?: string;
+	readonly PUBLIC_UMAMI_WEBSITE_ID?: string;
+	readonly PUBLIC_UMAMI_API_KEY?: string;
 }
