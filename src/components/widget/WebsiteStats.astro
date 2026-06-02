@@ -73,7 +73,9 @@ const runningDaysText = numberFormatter.format(runningDays);
 		const apiKey = widget.getAttribute("data-umami-api-key");
 
 		if (websiteId && apiKey) {
-			fetch(`https://api.umami.is/v1/websites/${websiteId}/stats`, {
+			// 1. 构建带时间范围的 API URL，startAt=0 表示从网站创建开始统计
+			const endAt = Date.now();
+			fetch(`https://api.umami.is/v1/websites/${websiteId}/stats?startAt=0&endAt=${endAt}`, {
 				headers: { "x-umami-api-key": apiKey },
 			})
 				.then((res) => {
@@ -84,14 +86,17 @@ const runningDaysText = numberFormatter.format(runningDays);
 					const pageviewsEl = document.getElementById("umami-pageviews");
 					const visitsEl = document.getElementById("umami-visits");
 					const fmt = new Intl.NumberFormat("zh-CN");
-					if (pageviewsEl && data?.pageviews?.value != null) {
-						pageviewsEl.textContent = fmt.format(data.pageviews.value);
+					// 2. 修复：API 返回的是直接的数字，不是 { value: number } 结构
+					if (pageviewsEl && data?.pageviews != null) {
+						pageviewsEl.textContent = fmt.format(data.pageviews);
 					}
-					if (visitsEl && data?.visits?.value != null) {
-						visitsEl.textContent = fmt.format(data.visits.value);
+					if (visitsEl && data?.visits != null) {
+						visitsEl.textContent = fmt.format(data.visits);
 					}
 				})
-				.catch(() => {});
+				.catch((err) => {
+					console.error("获取 Umami 统计数据失败:", err);
+				});
 		}
 	}
 </script>
