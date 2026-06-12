@@ -4,9 +4,8 @@ published: 2026-06-12
 description: Claude Code 中安装 skills 的所有方法 | 适用其它agent
 image: https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian/posts-image/20260612153550407.png
 tags:
-  - claude code
   - skills
-  - 教程
+  - 技能
 category: 学习&笔记
 draft: false
 lang: ""
