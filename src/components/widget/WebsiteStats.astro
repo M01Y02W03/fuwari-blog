@@ -20,6 +20,7 @@ console.log("[Umami Server] 环境变量:", {
 	apiKey: apiKey ? "***" + apiKey.slice(-4) : "未设置",
 });
 const launchDate = new Date(2026, 4, 26);
+const launchDateValue = launchDate.getTime();
 const today = new Date();
 const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 const startOfLaunchDay = new Date(launchDate.getFullYear(), launchDate.getMonth(), launchDate.getDate());
@@ -50,7 +51,7 @@ const runningDaysText = numberFormatter.format(runningDays);
 				<Icon name="material-symbols:event-rounded" class="text-[1rem]"></Icon>
 				<span>运行天数</span>
 			</div>
-			<div class="w-full text-2xl font-bold leading-none text-black/85 dark:text-white/90 text-center">{runningDaysText}</div>
+			<div class="w-full text-2xl font-bold leading-none text-black/85 dark:text-white/90 text-center" id="running-days">{runningDaysText}</div>
 		</div>
 
 		<div class="rounded-xl bg-[var(--btn-regular-bg)] border border-black/5 dark:border-white/5 px-3 py-3 flex flex-col items-center text-center gap-1.5">
@@ -71,8 +72,26 @@ const runningDaysText = numberFormatter.format(runningDays);
 	</div>
 </WidgetLayout>
 
-<script define:vars={{ websiteId, apiKey }}>
-	// 1. 页面加载时立即获取 Umami 统计数据
+<script define:vars={{ websiteId, apiKey, launchDateValue }}>
+	// 1. 客户端实时计算并更新运行天数
+	const updateRunningDays = () => {
+		const launchDate = new Date(launchDateValue);
+		const today = new Date();
+		const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+		const startOfLaunchDay = new Date(launchDate.getFullYear(), launchDate.getMonth(), launchDate.getDate());
+		const runningDays = Math.max(
+			1,
+			Math.floor((startOfToday.getTime() - startOfLaunchDay.getTime()) / 86400000) + 1,
+		);
+		const fmt = new Intl.NumberFormat("zh-CN");
+		const runningDaysEl = document.getElementById("running-days");
+		if (runningDaysEl) {
+			runningDaysEl.textContent = fmt.format(runningDays);
+		}
+	};
+	updateRunningDays();
+
+	// 2. 页面加载时立即获取 Umami 统计数据
 	console.log("[Umami] 开始加载统计数据...");
 	console.log("[Umami] 配置信息:", { websiteId, apiKey: apiKey ? "***" + apiKey.slice(-4) : "未设置" });
 
