@@ -35,10 +35,48 @@ const breathScientific = breaths.toExponential(3);
     <div class="transition text-50 text-sm text-center">
         &copy; <span id="copyright-year">{currentYear}</span> 局子粥头
         <br/>
-        地球Online玩家｜Uptime {age} Years｜累计呼吸 {breathScientific} ≈ {breathText} 亿次｜
+        地球Online玩家｜Uptime <span id="uptime-years">{age}</span> Years｜累计呼吸 <span id="breath-text">{breaths.toLocaleString()}</span> 次｜
         <span class="inline-flex items-center">
             <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1"></span>
             Online
         </span>
     </div>
 </div>
+
+<script>
+    // 1. 定义更新统计数据的函数
+    function updateStats() {
+        const birthDate = new Date("2003-11-21");
+        const now = new Date();
+
+        // 2. 计算年龄
+        let age = now.getFullYear() - birthDate.getFullYear();
+        if (
+            now.getMonth() < birthDate.getMonth() ||
+            (now.getMonth() === birthDate.getMonth() &&
+                now.getDate() < birthDate.getDate())
+        ) {
+            age--;
+        }
+
+        // 3. 计算累计呼吸次数（按32次/分钟估算）
+        const minutesLived = (now.getTime() - birthDate.getTime()) / 1000 / 60;
+        const breaths = Math.floor(minutesLived * 32);
+
+        // 4. 格式化数据（直接使用整数并带千位分隔符）
+        const breathFormatted = breaths.toLocaleString();
+
+        // 5. 更新 DOM 元素
+        const ageEl = document.getElementById('uptime-years');
+        const breathTextEl = document.getElementById('breath-text');
+
+        if (ageEl) ageEl.textContent = age.toString();
+        if (breathTextEl) breathTextEl.textContent = breathFormatted;
+    }
+
+    // 6. 初始化并设置定时器（每秒更新），防止重复设置
+    updateStats();
+    if (!window['statsIntervalId']) {
+        window['statsIntervalId'] = setInterval(updateStats, 1000);
+    }
+</script>
