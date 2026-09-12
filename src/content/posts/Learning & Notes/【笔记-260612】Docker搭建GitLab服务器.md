@@ -1,5 +1,5 @@
 ---
-title: 【笔记】Docker 搭建 GitLab 服务器
+title: Docker 搭建 GitLab 服务器
 published: 2026-06-12
 description: 使用 Docker 部署 GitLab CE 社区版完整教程 | 配置、端口映射、常见问题
 image: https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian/posts-image/20260612213046923.png
@@ -7,7 +7,7 @@ tags:
   - Docker
   - GitLab
   - DevOps
-category: 学习&笔记
+category: Learning & Notes
 draft: false
 lang: ""
 ---
