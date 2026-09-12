@@ -1,12 +1,12 @@
 ---
-title: 【笔记】Claude Code 安装 Skills 完全指南
+title: Claude Code 安装 Skills 完全指南
 published: 2026-06-12
 description: Claude Code 中安装 skills 的所有方法 | 适用其它agent
 image: https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian/posts-image/20260612153550407.png
 tags:
   - skills
   - 技能
-category: 学习&笔记
+category: Learning & Notes
 draft: false
 lang: ""
 ---

@@ -1,12 +1,12 @@
 ---
-title: 【笔记】Claude Code MCP 使用完全指南（本地 MCP + 远程 MCP）
+title: Claude Code MCP 使用完全指南（本地 MCP + 远程 MCP）
 published: 2026-06-12
 description: Claude Code 中 MCP 的安装、配置与使用教程 | 本地 MCP、远程 MCP、OAuth 登录、团队共享全覆盖
 image: https://jzzt-resources.oss-cn-hangzhou.aliyuncs.com/obsidian/posts-image/20260612163414049.png
 tags:
   - mcp
   - 工具
-category: 学习&笔记
+category: Learning & Notes
 draft: false
 lang: ""
 ---
