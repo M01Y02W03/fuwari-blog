@@ -71,6 +71,11 @@ const bannerOffsetByPosition = {
 };
 const bannerOffset =
 	bannerOffsetByPosition[siteConfig.banner.position || "center"];
+const bannerUsesRemoteSource = /^https?:\/\//i.test(siteConfig.banner.src);
+const bannerRemoteOrigin = bannerUsesRemoteSource
+        ? new URL(siteConfig.banner.src).origin
+        : undefined;
+const bannerHueProxyOrigin = bannerUsesRemoteSource ? "https://wsrv.nl" : undefined;
 ---
 
 <!DOCTYPE html>
@@ -109,6 +114,12 @@ const bannerOffset =
 				  media={favicon.theme && `(prefers-color-scheme: ${favicon.theme})`}
 			/>
 		))}
+                {bannerRemoteOrigin && (
+                        <link rel="preconnect" href={bannerRemoteOrigin} crossorigin="anonymous" />
+                )}
+                {bannerHueProxyOrigin && (
+                        <link rel="preconnect" href={bannerHueProxyOrigin} crossorigin="anonymous" />
+                )}
 
 		<!-- Set the theme before the page is rendered to avoid a flash -->
 		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue, autoBannerHue}}>
@@ -385,10 +396,10 @@ function showBanner() {
 		banner.classList.remove('opacity-0', 'scale-105');
 	};
 
-	/*
-		远程横幅在运行时可能会被替换成支持 CORS 的代理地址。
-		这里等待最终图片加载完成后再显示，避免用户先看到空白蒙层或错误图。
-	*/
+        /*
+                1. 等待首屏横幅图片真正完成加载后再解除隐藏。
+                2. 这样可以避免慢网速下先看到空白蒙层，再看到图片闪入的突兀感。
+        */
 	if (!(bannerImage instanceof HTMLImageElement)) {
 		revealBanner();
 		return;
@@ -415,8 +426,9 @@ const bannerHueState = bannerHueWindow[BANNER_HUE_STATE_KEY] || (bannerHueWindow
 });
 
 function buildCorsSafeBannerUrl(sourceUrl: string) {
-	const encodedSourceUrl = encodeURIComponent(sourceUrl);
-	return `https://wsrv.nl/?url=${encodedSourceUrl}&output=jpg&cb=${Date.now()}`;
+        const encodedSourceUrl = encodeURIComponent(sourceUrl);
+        const refreshToken = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        return `https://wsrv.nl/?url=${encodedSourceUrl}&output=jpg&cb=${refreshToken}`;
 }
 
 function prepareBannerImage() {
@@ -429,35 +441,14 @@ function prepareBannerImage() {
 		return null;
 	}
 
-	if (!/^https?:\/\//i.test(siteConfig.banner.src)) {
-		return bannerImage;
-	}
-
-	if (bannerImage.dataset.bannerPrepared === "true") {
-		return bannerImage;
-	}
-
-	bannerImage.dataset.bannerPrepared = "true";
-	const fallbackSrc = bannerImage.currentSrc || bannerImage.src;
-	const proxySrc = buildCorsSafeBannerUrl(siteConfig.banner.src);
-
-	// 1. 远程图片源不支持 CORS 时，改走公共图片代理，保证静态站点也能安全取色
-	bannerImage.crossOrigin = "anonymous";
-	bannerImage.referrerPolicy = "no-referrer";
-	bannerImage.addEventListener("error", () => {
-		/*
-			代理异常时回退到原始横幅，至少保证图片仍可展示。
-			此时自动取色会退回默认主题色，不会影响页面继续访问。
-		*/
-		if (bannerImage.dataset.bannerFallbackApplied === "true") {
-			return;
-		}
-
-		bannerImage.dataset.bannerFallbackApplied = "true";
-		bannerImage.removeAttribute("crossorigin");
-		bannerImage.src = fallbackSrc;
-	}, { once: true });
-	bannerImage.src = proxySrc;
+        /*
+                1. 横幅展示直接使用原始随机图源，保证每次整页刷新都有机会切换图片。
+                2. 这里只补齐跨域属性，让支持 CORS 的图源可以直接参与前端取色。
+        */
+        if (/^https?:\/\//i.test(siteConfig.banner.src)) {
+                bannerImage.crossOrigin = "anonymous";
+                bannerImage.referrerPolicy = "no-referrer";
+        }
 
 	return bannerImage;
 }
@@ -560,6 +551,22 @@ function extractHueFromBannerImage(image: HTMLImageElement) {
 	}
 }
 
+function loadBannerHueProxyImage(sourceUrl: string) {
+        return new Promise<HTMLImageElement | null>((resolve) => {
+                const proxyImage = new Image();
+
+                // 1. 代理图仅用于前端取色，不参与首屏展示，避免额外阻塞横幅出图。
+                proxyImage.crossOrigin = "anonymous";
+                proxyImage.referrerPolicy = "no-referrer";
+                proxyImage.decoding = "async";
+                proxyImage.onload = () => resolve(proxyImage);
+                proxyImage.onerror = () => resolve(null);
+
+                // 2. 随机图源不能长期缓存，否则刷新时会一直拿到同一张图。
+                proxyImage.src = buildCorsSafeBannerUrl(sourceUrl);
+        });
+}
+
 function applyBannerHueIfNeeded() {
 	if (!siteConfig.banner.enable) {
 		return;
@@ -575,25 +582,38 @@ function applyBannerHueIfNeeded() {
 		return;
 	}
 
-	// 1. 等待 banner 图片真正加载完成后再取色，避免读到空白像素
-	const syncHueFromImage = () => {
-		const hue = extractHueFromBannerImage(bannerImage);
-		if (hue === null) {
-			return;
-		}
+        const syncHueFromImage = async () => {
+                // 1. 先尝试直接从当前展示图取色，命中 CORS 时速度最快。
+                let hue = extractHueFromBannerImage(bannerImage);
 
-		// 2. 取到有效色相后立即写回系统主题色，并记录当前横幅来源
-		setHue(hue);
-		bannerHueState.initialized = true;
-		bannerHueState.lastImageSrc = imageSrc;
+                /*
+                        2. 某些远程图源会把 canvas 污染成不可读状态。
+                        3. 这时再异步加载一张代理图专门用于取色，避免影响首屏横幅显示。
+                */
+                if (hue === null && /^https?:\/\//i.test(imageSrc)) {
+                        const proxyImage = await loadBannerHueProxyImage(imageSrc);
+                        if (proxyImage) {
+                                hue = extractHueFromBannerImage(proxyImage);
+                        }
+                }
+
+                if (hue === null) {
+                        return;
+                }
+
+                setHue(hue);
+                bannerHueState.initialized = true;
+                bannerHueState.lastImageSrc = imageSrc;
 	};
 
 	if (bannerImage.complete && bannerImage.naturalWidth > 0) {
-		syncHueFromImage();
+                void syncHueFromImage();
 		return;
 	}
 
-	bannerImage.addEventListener("load", syncHueFromImage, { once: true });
+        bannerImage.addEventListener("load", () => {
+                void syncHueFromImage();
+        }, { once: true });
 }
 
 function init() {
