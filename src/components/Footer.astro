@@ -1,41 +1,34 @@
 ---
-import {profileConfig} from "../config";
-import {url} from "../utils/url-utils";
-
 const currentYear = new Date().getFullYear();
-
-// 出生日期（2003年11月）
 const birthDate = new Date("2003-11-21");
 const now = new Date();
 
-// 计算年龄
-let age = now.getFullYear() - birthDate.getFullYear();
+function getAge(currentDate: Date) {
+    let age = currentDate.getFullYear() - birthDate.getFullYear();
 
-if (
-    now.getMonth() < birthDate.getMonth() ||
-    (now.getMonth() === birthDate.getMonth() &&
-        now.getDate() < birthDate.getDate())
-) {
-    age--;
+    if (
+        currentDate.getMonth() < birthDate.getMonth() ||
+        (currentDate.getMonth() === birthDate.getMonth() &&
+            currentDate.getDate() < birthDate.getDate())
+    ) {
+        age--;
+    }
+
+    return age;
 }
 
-// 计算累计呼吸次数（按32次/分钟估算）
+const age = getAge(now);
 const minutesLived = (now.getTime() - birthDate.getTime()) / 1000 / 60;
 const breaths = Math.floor(minutesLived * 32);
-
-// 转换为亿次
-const breathText = (breaths / 100000000).toFixed(1);
-// 科学计数法
-const breathScientific = breaths.toExponential(3);
 ---
 
 <div class="transition border-t border-black/10 dark:border-white/15 my-10 border-dashed mx-32"></div>
 
 <div class="transition border-dashed border-[oklch(85%_0.01_var(--hue))] dark:border-white/15 rounded-2xl mb-12 flex flex-col items-center justify-center px-6">
     <div class="transition text-50 text-sm text-center">
-        &copy; <span id="copyright-year">{currentYear}</span> 局子粥头
+        &copy; <span data-footer-copyright-year>{currentYear}</span> 局子粥头
         <br/>
-        地球Online玩家｜Uptime <span id="uptime-years">{age}</span> Years｜累计呼吸 <span id="breath-text">{breaths.toLocaleString()}</span> 次｜
+        地球Online玩家｜Uptime <span data-footer-uptime-years>{age}</span> Years｜累计呼吸 <span data-footer-breath-text>{breaths.toLocaleString()}</span> 次｜
         <span class="inline-flex items-center">
             <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1"></span>
             Online
@@ -44,12 +37,15 @@ const breathScientific = breaths.toExponential(3);
 </div>
 
 <script>
-    // 1. 定义更新统计数据的函数
-    function updateStats() {
+    type StatsWindow = Window & {
+        statsIntervalId?: number;
+    };
+
+    // 1. 定义统计数据计算逻辑
+    function calculateStats() {
         const birthDate = new Date("2003-11-21");
         const now = new Date();
 
-        // 2. 计算年龄
         let age = now.getFullYear() - birthDate.getFullYear();
         if (
             now.getMonth() < birthDate.getMonth() ||
@@ -59,24 +55,36 @@ const breathScientific = breaths.toExponential(3);
             age--;
         }
 
-        // 3. 计算累计呼吸次数（按32次/分钟估算）
         const minutesLived = (now.getTime() - birthDate.getTime()) / 1000 / 60;
         const breaths = Math.floor(minutesLived * 32);
 
-        // 4. 格式化数据（直接使用整数并带千位分隔符）
-        const breathFormatted = breaths.toLocaleString();
-
-        // 5. 更新 DOM 元素
-        const ageEl = document.getElementById('uptime-years');
-        const breathTextEl = document.getElementById('breath-text');
-
-        if (ageEl) ageEl.textContent = age.toString();
-        if (breathTextEl) breathTextEl.textContent = breathFormatted;
+        return {
+            age: age.toString(),
+            breathText: breaths.toLocaleString(),
+        };
     }
 
-    // 6. 初始化并设置定时器（每秒更新），防止重复设置
+    // 2. 更新页面中的所有统计节点
+    function updateStats() {
+        const { age, breathText } = calculateStats();
+
+        /*
+            这里不能继续使用 getElementById。
+            页面会同时渲染桌面端和移动端两份 Footer，重复 id 只会命中第一份节点，
+            导致另一份可见区域的数据不刷新，因此改为批量更新同类 data 标记节点。
+        */
+        document.querySelectorAll("[data-footer-uptime-years]").forEach(element => {
+            element.textContent = age;
+        });
+        document.querySelectorAll("[data-footer-breath-text]").forEach(element => {
+            element.textContent = breathText;
+        });
+    }
+
+    // 3. 初始化并设置全局唯一的定时器
     updateStats();
-    if (!window['statsIntervalId']) {
-        window['statsIntervalId'] = setInterval(updateStats, 1000);
+    const statsWindow = window as StatsWindow;
+    if (!statsWindow.statsIntervalId) {
+        statsWindow.statsIntervalId = window.setInterval(updateStats, 1000);
     }
 </script>
